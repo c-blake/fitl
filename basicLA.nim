@@ -1,0 +1,67 @@
+## This is just a few BLAS Level 1 operations.  With gcc -ffast-math auto-vec
+## they are about as fast (or sometimes a bit faster) than optimized libs. (A
+## bit faster since they are more specific to dense/non-strided iterations.)
+{.passC: "-O3 -ffast-math -march=native -mtune=native".}
+
+proc sum*[F](x: ptr F; n: int): F =
+  ## Sum of elements with accumulator in same arithmetic width as params.
+  let x = cast[ptr UncheckedArray[F]](x)
+  for i in 0..<n: result += x[i]
+
+proc dot*[F](x, y: ptr F; n: int): F {.inline.} =
+  ## Dot product with accumulator in same arithmetic width as params.
+  let x = cast[ptr UncheckedArray[F]](x)
+  let y = cast[ptr UncheckedArray[F]](y)
+  for i in 0 ..< n: result += x[i] * y[i]
+
+proc dots*[F](x, y: ptr F; x0, y0: F; n: int): F {.inline.} =
+  ## Dot (x-x0).(y-y0) with accumulator in same arithmetic width as params.
+  let x = cast[ptr UncheckedArray[F]](x)
+  let y = cast[ptr UncheckedArray[F]](y)
+  for i in 0 ..< n: result += (x[i] - x0) * (y[i] - y0)
+
+proc xpose*[F](t: var openArray[F]; x: openArray[F]; n, m: int) =
+  ## Fill pre-sized `t` with the transpose of n*m matrix `x`.
+  let t = cast[ptr UncheckedArray[F]](t)
+  let x = cast[ptr UncheckedArray[F]](x)
+  for j in 0 ..< m: # Order for dense wr sinces rd has ok chance of being cached
+    for i in 0 ..< n: t[n*j + i] = x[m*i + j]
+
+proc xpose*[F](x: openArray[F]; n, m: int): seq[F] =
+  ## Return seq-allocated transpose of n*m matrix `x`.
+  result.setLen n*m
+  xpose(result, x, n, m)
+
+proc vadd*[F](x: ptr F; n: int, v: F) {.inline.} =
+  ## Add `v` to each element of `x`
+  let x = cast[ptr UncheckedArray[F]](x)
+  for i in 0 ..< n: x[i] += v
+
+proc vmul*[F](x: ptr F; n: int, v: F) {.inline.} =
+  ## Multiply each element of `x` by `v`.
+  let x = cast[ptr UncheckedArray[F]](x)
+  for i in 0 ..< n: x[i] *= v
+
+func mnmx*[F: SomeFloat](xs: openArray[F]): (F, F) =
+  ## One pass data range (min, max).
+  if xs.len > 0:
+    result[0] = xs[0]; result[1] = xs[0]
+    for x in xs: result[0] = min(result[0], x); result[1] = max(result[1], x)
+  else: result[0]=F(NaN); result[1]=F(NaN)
+
+func mvar*[F: SomeFloat](xs: openArray[F]): (F, F) =
+  ## One pass mean & variance; NOTE: pop variance (1/n).
+  if xs.len > 0: # --passC:-ffast-math can autovec whole loop into vsubp[sd]/vaddp[sd] insns
+    let dx = xs[0]
+    var av, vr: F
+    for x in xs:
+      let x = x - dx; av += x; vr += x*x
+    av /= F(xs.len); vr /= F(xs.len)
+    result[0] = F(av.float + dx)
+    result[1] = F(max(1e-30*av*av, vr - av*av))
+  else: result[0]=F(NaN); result[1]=F(NaN)
+
+proc newSeq*[T](len: Natural, val: T): seq[T] =
+  ## Allocate & initialize a seq to a value
+  result.setLen len
+  for i in 0..<len: result[i] = val
