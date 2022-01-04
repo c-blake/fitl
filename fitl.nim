@@ -1,6 +1,5 @@
 import std/[strformat, math, random, strutils], spfun/studentT, cligen,
        cligen/[osUt, mslice, strUt], basicLA, covar, linfit
-template sum(F, i, it, expr): untyped = (var s: F; for i in it: s += expr; s)
 type
   Gof* = enum gofR2="r2", gofCsq="csq", gofPar="param"
   Cov* = enum covLabel="label", covNorm="norm", covEst="est", covBoot="boot"
