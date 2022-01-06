@@ -1,7 +1,7 @@
 ## This is just a few BLAS Level 1 operations.  With gcc -ffast-math auto-vec
 ## they are about as fast (or sometimes a bit faster) than optimized libs. (A
 ## bit faster since they are more specific to dense/non-strided iterations.)
-{.passC: "-O3 -ffast-math -march=native -mtune=native".}
+{.passc: "-O3 -ffast-math -march=native -mtune=native".}
 
 proc sum*[F](x: ptr F; n: int): F =
   ## Sum of elements with accumulator in same arithmetic width as params.

@@ -1,5 +1,5 @@
 import math, basicLA
-{.passC: "-O3 -ffast-math -march=native -mtune=native".}
+{.passc: "-O3 -ffast-math -march=native -mtune=native".}
 
 proc mean[F](x: ptr F; n: int): F = sum(x, n) / F(n)
 

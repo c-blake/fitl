@@ -122,7 +122,7 @@ proc normalize*[F](x: var openArray[F]; n,M: int; xfm: string; o,s: var seq[F])=
   ## 'm': min-max (data range->[0,1]).  For explanations see:
   ## www.listendata.com/2017/04/how-to-standardize-variable-in-regression.html.
   for j, ch in xfm:
-    case ch.toLowerASCII
+    case ch.toLowerAscii
     of 'c':
       let (avg, _) = mvar(x[j*n ..< (j+1)*n])
       o[j] += avg
@@ -187,7 +187,7 @@ proc fmtCov*[F](s: string; v: seq[F]; m=0; norm=false, label=false): string =
       result.add '\n'
 
 proc fmtBasis[F](ch: char; ix: int; o,s: F; sep: string): string =
-  let ch = ch.toLowerASCII
+  let ch = ch.toLowerAscii
   let pm = "+-"[int(o > F(0))]
   result.add (if   ch == 'c'      : &"(${ix} {pm} {abs(o)})"
               elif ch in {'z','m'}: &"(${ix} {pm} {abs(o)})/{s}"
@@ -204,4 +204,4 @@ proc fmtModel*[F](cols: seq[string]; ixX: seq[int]; M: int;
       result.add &"{b[j-1]:.9g} *"
       result.add fmtBasis(cols[j][0], ixX[j], o[j], s[j], sep)
 
-proc Q*[F](df, ssr: F): F = F(1) - gammaI(df/F(2), ssR/F(2))
+proc Q*[F](df, ssR: F): F = F(1) - gammaI(df/F(2), ssR/F(2))

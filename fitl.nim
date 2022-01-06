@@ -17,7 +17,7 @@ proc colCpy(dst, src: pointer; nD, nS, m, sz: int) =  # To make bootstrap data
 
 proc parseCols(cols: seq[string]): (string, seq[string]) =
   for col in cols:
-    case col[0].toLowerASCII
+    case col[0].toLowerAscii
     of 'z': result[0].add 'z'; result[1].add col[1..^1]
     of 'c': result[0].add 'c'; result[1].add col[1..^1]
     of 'm': result[0].add 'm'; result[1].add col[1..^1]
