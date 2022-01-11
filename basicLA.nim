@@ -9,12 +9,22 @@ proc sum*[F](x: ptr F; n: int): F =
   for i in 0..<n: result += x[i]
 
 template sum0*(i, lim, ex: untyped): untyped =
-  ## Sum of exprs ex(i) from 0..<`lim` with accumulator in `ex`-type arithmetic.
+  ## Sum of expressions ex(i) from 0..<`lim`.  Accumulator is `type(ex)`.  Eg.,
+  ## `sum0(i, 5, float64(i))==10.0` accumulated in float64 arithmetic.
   var i {.inject.}: type(lim)   # put i in scope for ex(i); init to 0
   var tot: type(ex)             # accumulator type taken from ex
-  while i < lim:
+  for i in i ..< lim: tot += ex # make i same type as lim & read-only within ex
+  tot
+
+template Sum*[T](i; itr: iterable[T]; ex): untyped =
+  ## A more general version of `sum0` leveraging Nim iterator builder syntax to
+  ## mimick math notation.  Eg., `Sum(i, 1..10, 2*i)`.  It is capitalized to be
+  ## like math & to not collide w/math.sum (untyped BREAKS OVERLOAD RESOLUTION).
+  var i {.inject.}: T   # put i in scope for ex(i)
+  var tot: type(ex)     # accumulator type from ex(i)
+  for kji in itr:       # engage generic iterator yielding T
+    let i = kji         # rename itr yield to read-only i
     tot += ex
-    inc i
   tot
 
 proc dot*[F](x, y: ptr F; n: int): F {.inline.} =
