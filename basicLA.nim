@@ -8,6 +8,15 @@ proc sum*[F](x: ptr F; n: int): F =
   let x = cast[ptr UncheckedArray[F]](x)
   for i in 0..<n: result += x[i]
 
+template sum0*(i, lim, ex: untyped): untyped =
+  ## Sum of exprs ex(i) from 0..<`lim` with accumulator in `ex`-type arithmetic.
+  var i {.inject.}: type(lim)   # put i in scope for ex(i); init to 0
+  var tot: type(ex)             # accumulator type taken from ex
+  while i < lim:
+    tot += ex
+    inc i
+  tot
+
 proc dot*[F](x, y: ptr F; n: int): F {.inline.} =
   ## Dot product with accumulator in same arithmetic width as params.
   let x = cast[ptr UncheckedArray[F]](x)

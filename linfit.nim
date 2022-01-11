@@ -1,6 +1,5 @@
 import std/[strformat, strutils, sequtils, algorithm, math],
        spfun/[gauss, gamma], basicLA, svdx, min1d
-template sum(F, i, it, expr): untyped = (var s: F; for i in it: s += expr; s)
 type
   F8     = float
   CrVal* = enum xvGCV = "GCV", xvLOO = "LOO"
@@ -27,7 +26,7 @@ proc loo(o: var CrossVal; L: F8): F8 =
   # Return Leave-One-Out Cross-Validation score also known as "Allen's PRESS" as
   # a function of ridge parameter L & in-hand Singular Value Decomposition.
   let n = o.n; let m = o.m
-  for j in 0 ..< m: o.z[j] = sum(F8, i, 0..<n, o.u[i + n*j]*o.y[i]) # zj = Uj*y
+  for j in 0 ..< m: o.z[j] = sum0(i, n, o.u[i + n*j]*o.y[i]) # zj = Uj*y
   var ss: F8
   for i in 0 ..< n:
     var Hii, yEst: F8
@@ -46,9 +45,9 @@ proc gcv(o: var CrossVal; L: F8): F8 =
   var df  = F8(n - m)
   var rss = 0.0
   if o.rss0 == 0.0:
-    for j in 0 ..< m: o.z[j] = sum(F8, i, 0..<n, o.u[i + n*j]*o.y[i]) # zj=Uj*y
+    for j in 0 ..< m: o.z[j] = sum0(i,n, o.u[i + n*j]*o.y[i]) # zj=Uj*y
     for i in 0 ..< n:                               # r = y - yEst = y - U.z
-      let yEst = sum(F8, j, 0..<m, o.u[i + n*j]*o.z[j])
+      let yEst = sum0(j,m, o.u[i + n*j]*o.z[j])
       rss += (o.y[i] - yEst)*(o.y[i] - yEst)        # rss against OLS yEst
     o.rss0 = rss
   else: rss = o.rss0
@@ -79,7 +78,7 @@ proc linFit*[F](y, x: openArray[F]; n, m: int; b, u, s, v, r, h: var seq[F];
   if doH: h.setLen n
   let svMx = svdx(u, s, v, n, m)                # SVD LHS of X.b=y design eq
   if doH:
-    for i in 0 ..< n: h[i] = sum(F, j, 0..<m, u[i + n*j]*u[i + n*j])
+    for i in 0 ..< n: h[i] = sum0(j,m, u[i + n*j]*u[i + n*j])
   var df = F(n - m)
   if thr > 0:                                   # Manual singular value clip
     for j in 0 ..< m: s[j] = if s[j] > thr*svMx: 1.0 / s[j] else: 0.0
@@ -99,12 +98,12 @@ proc linFit*[F](y, x: openArray[F]; n, m: int; b, u, s, v, r, h: var seq[F];
       for j in 0 ..< m: log.write &"{s[j]:.4g}%s", (if j < m-1: " " else: "\n")
   for k in 0 ..< m:                             # Calc best fit params b[]
     b[k] = F(0)
-    for i in 0 ..< n: b[k] += sum(F, j, 0..<m, v[k + m*j]*s[j]*u[i + n*j]*y[i])
+    for i in 0 ..< n: b[k] += sum0(j,m, v[k + m*j]*s[j]*u[i + n*j]*y[i])
   var ssR, ssY: F
   if doR or doC:                                # residuals if requested|needed
     let (_, vY) = mvar(y); ssY = vY*F(n)
     for i in 0 ..< n:                           # yEst: estimated y from x&b
-      let yEst = sum(F, j, 0..<m, b[j]*x[i + n*j])
+      let yEst = sum0(j,m, b[j]*x[i + n*j])
       if doR: r[i] = y[i] - yEst
       ssR += (y[i] - yEst)*(y[i] - yEst)
   if doC:                                       # Cov(b) = inv(X'X) = V.W^2.Vt
@@ -112,7 +111,7 @@ proc linFit*[F](y, x: openArray[F]; n, m: int; b, u, s, v, r, h: var seq[F];
     let redCsq = if df > 0.0: ssR/df else: 0.0  # reduced Chi-square
     for i in 0 ..< m:
       for j in 0 .. i:
-        let Cij = redCsq * sum(F, k, 0..<m, v[i + m*k]*v[j + m*k] * s[k]*s[k])
+        let Cij = redCsq * sum0(k,m, v[i + m*k]*v[j + m*k] * s[k]*s[k])
         cov[m*i + j] = Cij; cov[m*j + i] = cov[m*i + j]
     v = cov
   (ssR, df, ssY)
