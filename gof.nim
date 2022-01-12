@@ -2,7 +2,7 @@
 ## Ralph B. D'Agostino and Michael A. Stephens (referred to now as ds86).
 import std/[math, random, algorithm], spfun/gauss, basicLA
 
-type              # Open Topoloy               Circular Topology
+type              # Open Topology              Circular Topology
   GoFTest* = enum gfD  = "kolmogorovSmirnovD", gfV  = "vKuiper" , # L_infinity
                   gfW2 = "cramerVonMisesW2"  , gfU2 = "watsonU2", # L2 norm
                   gfA2 = "andersonDarlingA2"
