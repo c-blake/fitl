@@ -3,13 +3,13 @@
 import std/[math, random, algorithm], spfun/gauss, basicLA
 
 type              # Open Topoloy               Circular Topology
-  GoFTest* = enum gfD  = "kolmogorovSmirnovD", gfV  = "kuiperV" , # L_infinity
+  GoFTest* = enum gfD  = "kolmogorovSmirnovD", gfV  = "vKuiper" , # L_infinity
                   gfW2 = "cramerVonMisesW2"  , gfU2 = "watsonU2", # L2 norm
                   gfA2 = "andersonDarlingA2"
 
   GoFMod* = enum gfFin = "finiteN", gfEst = "estimates"
 
-const gofName*: array[GoFTest, string] = [ "mD", "mV", "mW^2", "mU^2", "mA^2" ]
+const gofName*: array[GoFTest, string] = [ "D", "V", "W^2", "U^2", "A^2" ]
 const noMod: set[GoFMod] = {}
 
 func kolmogorovSmirnovPM[F](ps: seq[F]): (F, F) =
@@ -109,12 +109,14 @@ when isMainModule:
 
   type Emit=enum eZ="z", ePITz="PITz", eStat="stat", eDist="dist", eProb="prob"
 
-  proc isGauss(sample: seq[float], gofs: seq[GoFTest], adj: set[GoFMod]={},
-               emit={eStat}, m=5000, knownM=0.0, knownV=0.0, ran=true) =
-    ## Apply GoF tests for a Gaussian shape with estimated parameters.
+  proc gof(sample: seq[float], gofs: seq[GoFTest], adj: set[GoFMod]={},
+           emit={eStat}, m=5000, knownM=0.0, knownV=0.0, ran=true) =
+    ## Tests for a Gaussian shape with known|estimated parameters.  E.g.: *gof
+    ## -g,=,k,v,c,w,a -ep 15 16 17 18 18 19 19 20 20 21 22 22 23 23 23 24 24 27*
     if ran: randomize()
     var sample = sample                 #NOTE: Sample variance to match ds86
     let mV = if knownV == 0.0: sample.mvars else: (knownM, knownV)
+    let adj = if knownV == 0.0 and adj.len == 0: {gfEst} else: adj
     sample.zscore mV
     if eZ in emit: echo "zScores: ", sample
     sample.sort; sample.pitz
@@ -123,17 +125,18 @@ when isMainModule:
     for g in gofs:
       if (emit*{eStat,eProb}).len != 0: st = sample.gofStat(mV, g, adj, true)
       if (emit*{eDist,eProb}).len != 0: cdf.gofDist(sample.len, mV, g, adj, m)
-      if eStat in emit:echo &"{gofName[g]}: {st:.4g}"
-      if eProb in emit:echo &"P({gofName[g]}>val|Gauss): {1.0-cdf.prob(st):.4g}"
-      if eDist in emit:echo &"cdf({gofName[g]}): ", cdf
+      let gName = if adj.len == 0: gofName[g] else: "m" & gofName[g]
+      if eStat in emit: echo &"{gName}: {st:.4g}"
+      if eProb in emit: echo &"P({gName}>val|Gauss): {1.0-cdf.prob(st):.4g}"
+      if eDist in emit: echo &"cdf({gName}): ", cdf
 
   clCfg.hTabVal4req = "NEED"
-  dispatch isGauss, positional="sample", help={"sample": "x1 x2 .. data sample",
+  dispatch gof, positional="sample", help={"sample": "x1 x2 .. data sample",
     "gofs":
-      "kolmogorovSmirnovD cramerVonMisesW2 andersonDarlingA2 kuiperV watsonU2",
+      "kolmogorovSmirnovD cramerVonMisesW2 andersonDarlingA2 vKuiper watsonU2",
     "adj"   : "adjust GoF stat for: finiteN estimates",
     "emit"  : "emits: z, PITz, stat, dist, prob",
     "m"     : "number of n-samples to estimate CDF",
-    "knownM": "fully specified dist of this known mean",
-    "knownV": "fully specified dist of this known variance",
+    "knownM": "Gaussian of this known mean",
+    "knownV": "Gaussian of this known variance; 0=>adj=est",
     "ran"   : "randomize() for sampling"}
