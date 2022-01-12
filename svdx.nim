@@ -62,10 +62,8 @@ when isMainModule:
   var v = newSeq[float32](9)
   discard svdx(u, s, v, 4, 3)
   stdout.write "u cols Lv:\n",u.fmt(4,3),"s: ",s,"\n","v cols Rv:\n",v.fmt(3,3)
-  var err = 0f32
-  for i in 0..<4:               # A =~ U.S.Vt = eins U_ik * S_kl * Vt_lj
-    for j in 0..<3:             #        A_ij = eins U_ik * D_kl*s_k * Vt_jl
-      var a_ij: float32         #             = eins s_k * U_ik * V_jk
-      for k in 0..<3: a_ij += s[k]*u[i + 4*k]*v[j + 3*k]
-      err = max(err, abs(x[i + 4*j] - a_ij))
-  echo "max|X-U.S.Vt|: ", err
+  from basicLA import sum0
+  var e = 0f32      # U.S.Vt = sum_kl U_ik*S_kl*Vt_lj = U_ik*D_kl*s_k*Vt_jl
+  for i in 0..<4:   #        = sum_k s_k*U_ik*V_jk
+    for j in 0..<3: e=max(e, abs(x[i+4*j] - sum0(k,3, s[k]*u[i+4*k]*v[j+3*k])))
+  echo "max|X-U.S.Vt|: ", e
