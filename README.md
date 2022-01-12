@@ -124,12 +124,13 @@ traditional/inference-focused/"science-oriented" stats.  Consequently, the ethos
 is to throw every possible predictor (and sometimes technique in general) at
 problems and see what features are discovered.  In the context of multi-linear
 regression, this puts a pressure on preventing overfitting often called
-[regularization](https://en.wikipedia.org/wiki/Regularization_%28mathematics%29).
+[regularization](https://en.wikipedia.org/wiki/Regularization_%28mathematics%29)
+or sometimes [model selection](https://en.wikipedia.org/wiki/Model_selection).
 
 Since SVD is already done for reasons of basic estimation sanity, [ridge
 regression](https://en.wikipedia.org/wiki/Ridge_regression) aka [Tikhonov
 regularization](https://en.wikipedia.org/wiki/Tikhonov_regularization) is the
-most natural (and efficient) form.  While derivable from a quadratic penalty on
+most natural (and efficient) way.  While derivable from a quadratic penalty on
 the parameter vector in the least squares optimization, this boils down to
 "adjusting" singular values.
 
