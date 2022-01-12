@@ -131,7 +131,8 @@ when isMainModule:
       if eDist in emit: echo &"cdf({gName}): ", cdf
 
   clCfg.hTabVal4req = "NEED"
-  dispatch gof, positional="sample", help={"sample": "x_1 x_2 .. x_n sample",
+  dispatch gof, positional="sample", help={
+    "sample": "x_1 x_2 .. x_n data sample",
     "gofs":
       "kolmogorovSmirnovD cramerVonMisesW2 andersonDarlingA2 vKuiper watsonU2",
     "adj"   : "adjust GoF stat for: finiteN estimates",
