@@ -82,6 +82,11 @@ func mvar*[F: SomeFloat](xs: openArray[F]): (F, F) =
     result[1] = F(max(1e-30*av*av, vr - av*av))
   else: result[0]=F(NaN); result[1]=F(NaN)
 
+func mvars*[F: SomeFloat](xs: openArray[F]): (F, F) =
+  ## One pass mean & sample variance
+  let mV = xs.mvar
+  (mV[0], mV[1]*F(xs.len)/F(xs.len - 1))
+
 proc newSeq*[T](len: Natural, val: T): seq[T] =
   ## Allocate & initialize a seq to a value
   result.setLen len
