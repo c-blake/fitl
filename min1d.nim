@@ -20,7 +20,7 @@ proc minBrent*[F](x: var F; a, b: F; f: ScalarF[F]; tol=1e-7, itMx=100,
     if abs(dx) <= dxMin:                    # Golden section step
       dx = (if x >= xm: a else: b) - x
       s  = golden*dx
-    else:                                   # Parabolic interpolatio step
+    else:                                   # Parabolic interpolation step
       let xw = (x - w)*(fx - fv)
       let xv = (x - v)*(fx - fw)
       var vw = F(2)*(xv - xw)
