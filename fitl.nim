@@ -1,7 +1,9 @@
 import std/[strformat, math, random, strutils], spfun/studentT, cligen,
-       cligen/[osUt, mslice, strUt], basicLA, covar, linfit
+       cligen/[osUt, mslice, strUt], basicLA, covar, linfit, gof
 type
-  Gof* = enum gofR2="r2", gofCsq="csq", gofPar="param"
+  Gof* = enum gofR2="r2", gofXsq="xsq", gofPar="param", gofV="vKuiper",
+              gofD="kolmogorovSmirnovD"               , gofU2="watsonU2",
+              gofW2="cramerVonMisesW2", gofA2="andersonDarlingA2"
   Cov* = enum covLabel="label", covNorm="norm", covEst="est", covBoot="boot"
   F*   = float
 
@@ -99,7 +101,19 @@ proc fitl*(cols: seq[string], wtCol=0, delim="w", sv=1e-8, xv=xvLOO, resids="",
     echo &"ResidAutoCorr-Lag-{lag}: {ac:.5f}\t{F(1) - corrP(ac, n - lag):.5f}"
   if covEst in cov: echo fmtCov("estimated",v,m,covNorm in cov, covLabel in cov)
   if gofR2  in gof: echo &"r-squared: {F(1) - ssR/(ssY*s[0]):.6g}"
-  if gofCsq in gof: echo &"Chi-sqr: {ssR:.6g} nu: {df:.4g} p: {Q(df,ssR):.5g}"
+  if gofXsq in gof: echo &"Chi-sqr: {ssR:.4g} nu: {df:.4g} p: {Q(df, ssR):.5g}"
+  var mV: (F, F)
+  if ({gofD,gofW2,gofA2,gofV,gofU2}*gof).len>0: # *some* EDF-based residual test
+    mV = r.mvars; r.u01ize mV                   # mean-vars => PITz just once
+  proc fmtGf(nm: string; sP: (F, F); sDig,pDig: int): string =
+    result.add nm;result.add ": "; result.add formatFloat(sP[0], precision=sDig)
+    result.add "  "; result.add formatFloat(sP[1], precision=pDig)
+    if sP[1] < 0.01: result.add '*'             # Q: take thresh as a param?
+  if gofD  in gof: echo fmtGf("KSgaussRes" , r.gofTest(mV, gfD ), 4, 3)
+  if gofW2 in gof: echo fmtGf("CvMgaussRes", r.gofTest(mV, gfW2), 4, 3)
+  if gofA2 in gof: echo fmtGf("ADgaussRes" , r.gofTest(mV, gfA2), 4, 3)
+  if gofV  in gof: echo fmtGf("KuiGaussRes", r.gofTest(mV, gfV ), 4, 3)
+  if gofU2 in gof: echo fmtGf("WatGaussRes", r.gofTest(mV, gfU2), 4, 3)
   template slot: untyped = int(F(n)*rand(F(1.0))) # rand(n-1) unbiased but slow
   if boot > 0:                                  # Bootstrapped cov(parameters)
     randomize()                                 # Fit synthetic new data sets..
