@@ -1,5 +1,5 @@
-import std/[strformat, math, random, strutils], spfun/studentT, cligen,
-       cligen/[osUt, mslice, strUt], basicLA, covar, linfit, gof
+import std/[strformat, math, random, strutils, algorithm], spfun/studentT,
+       cligen, cligen/[osUt, mslice, strUt], basicLA, covar, linfit, gof, qtl
 type
   Gof* = enum gofR2="r2", gofXsq="xsq", gofPar="param", gofV="vKuiper",
               gofD="kolmogorovSmirnovD"               , gofU2="watsonU2",
@@ -54,11 +54,20 @@ proc parseInp(cols: seq[string]; sep: Sep; X: var seq[F];
   result[0] = xT.len div cols.len
   X = xpose(xT, result[0], cols.len)
 
-proc fmtPar[F](leading: string; bs, v: seq[F]): string =
-  result.add &"{leading}par(sig)\tsig/par\n"
+proc fmtPar[F](leading: string; bs, v, bT: seq[F]): string =
+  result.add &"{leading}param(sigma)\tsig/par\t5% .. 95%\n"
   for j, b in bs:
     let sig = sqrt(v[bs.len*j + j])
-    result.add &"{leading}{fmtUncertainMerged(b,sig)}\t{b/sig:.3g}\n"
+    result.add &"{leading}{fmtUncertainMerged(b,sig)}\t{b/sig:.3g}\t"
+    let digs = max(int(log(b/sig, 10.0) + 2.5), 2)
+    if bT.len == 0:
+      result.add formatFloat(b - 1.64485*sig, precision=digs); result.add " .. "
+      result.add formatFloat(b + 1.64485*sig, precision=digs); result.add "\n"
+    else:
+      let n  = bT.len div bs.len
+      var bb = bT[n*j ..< n*(j+1)]; bb.sort
+      result.add formatFloat(bb.quantile(0.05),precision=digs);result.add " .. "
+      result.add formatFloat(bb.quantile(0.95),precision=digs);result.add "\n"
   result.setLen result.len - 1
 
 proc fitl*(cols: seq[string], wtCol=0, delim="w", sv=1e-8, xv=xvLOO, resids="",
@@ -115,20 +124,21 @@ proc fitl*(cols: seq[string], wtCol=0, delim="w", sv=1e-8, xv=xvLOO, resids="",
   if gofV  in gof: echo fmtGf("KuiGaussRes", r.gofTest(mV, gfV ), 4, 3)
   if gofU2 in gof: echo fmtGf("WatGaussRes", r.gofTest(mV, gfU2), 4, 3)
   template slot: untyped = int(F(n)*rand(F(1.0))) # rand(n-1) unbiased but slow
+  var bT: seq[F]                               # Collect `b` for raw `Cov(b)`
   if boot > 0:                                  # Bootstrapped cov(parameters)
     randomize()                                 # Fit synthetic new data sets..
     var Xp = newSeq[F](n*M)                     #..of the *same size*.
-    var bK = newSeq[F]()                        # Collect `b` for raw `Cov(b)`
-    for k in 1..boot:
+    var bK: seq[F]; var b = newSeq[F](m)
+    for k in 1..boot:                           #XXX --gc:arc breaks boot
       for i in 0..<n: colCpy Xp[i].addr, X[slot()].addr, n, n, M, F.sizeof #Gen
       thr=sv; r.setLen 0; v.setLen 0; h.setLen 0; var u = newSeq[F](n*m) #Reset
       for j in 0..<M: o[j] = 0.0; s[j] = 1.0                  #offset&scale,too
       linFit(Xp,n,M, b,u,w,v, r,h, o,s, xfm, thr,xv,logF)               #Fit
       bK.add b                                                          #Record
-    covMat(v, xpose(bK, boot, m), boot, m)      # Replace `v` w/boostrapped cov
+    bT.setLen bK.len; bT.xpose(bK, boot, m)
+    covMat(v, bT, boot, m)                     # Replace `v` w/boostrapped cov
     if covBoot in cov:echo fmtCov("bootstrap",v,m,covNorm in cov,covLabel in cov)
-    #XXX --gc:arc breaks boot; Also use bK to do bootstrap conf.ivals for coefs
-  if gofPar in gof: echo &"Param Significance Breakdown:\n", fmtPar("  ", b, v)
+  if gofPar in gof: echo &"Param Significance Breakdown:\n", fmtPar("  ",b,v,bT)
   if resF != nil: resF.close
   if logF != nil: logF.close
 
