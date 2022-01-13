@@ -109,35 +109,43 @@ when isMainModule:
 
   type Emit=enum eZ="z", ePITz="PITz", eStat="stat", eDist="dist", eProb="prob"
 
-  proc gof(sample: seq[float], gofs: seq[GoFTest], adj: set[GoFMod]={},
-           emit={eStat}, m=5000, knownM=0.0, knownV=0.0, ran=true) =
-    ## Tests for a Gaussian shape with known|estimated parameters.  E.g.: *gof
-    ## -g,=,k,v,c,w,a -ep 15 16 17 18 18 19 19 20 20 21 22 22 23 23 23 24 24 27*
+  proc gof(sample: seq[float], gofs: seq[GoFTest] = @[], adj: set[GoFMod]={},
+        emit={eStat}, m=5000, knownM=0.0, knownV=0.0, pval=0.05, ran=true): int=
+    ## Tests for a Gaussian shape with known|estimated parameters.  E.g.:
+    ##  *gof -g,=,k,v,c,w,a -ep 15 16 17 18 19 19 20 20 21 22 22 23 23 23 24 27*
+    ## If `prob` is in `emit` then exit status doubles as a boolean test for
+    ## significant departure from a Gaussian at the *alpha* level `pval`.
     if ran: randomize()
     var sample = sample                 #NOTE: Sample variance to match ds86
-    let mV = if knownV == 0.0: sample.mvars else: (knownM, knownV)
-    let adj = if knownV == 0.0 and adj.len == 0: {gfEst} else: adj
+    let mV   = if knownV == 0.0: sample.mvars else: (knownM, knownV)
+    let adj  = if knownV == 0.0 and adj.len == 0: {gfEst} else: adj
+    let gofs = if gofs.len == 0: @[ gfA2 ] else: gofs
     sample.zscore mV
     if eZ in emit: echo "zScores: ", sample
     sample.sort; sample.pitz
     if ePITz in emit: echo "PITz: ", sample
     var st: float; var cdf: seq[float]
+    var nSignificantDepartures = 0
     for g in gofs:
       if (emit*{eStat,eProb}).len != 0: st = sample.gofStat(mV, g, adj, true)
       if (emit*{eDist,eProb}).len != 0: cdf.gofDist(sample.len, mV, g, adj, m)
       let gName = if adj.len == 0: gofName[g] else: "m" & gofName[g]
       if eStat in emit: echo &"{gName}: {st:.4g}"
-      if eProb in emit: echo &"P({gName}>val|Gauss): {1.0-cdf.prob(st):.4g}"
+      if eProb in emit:
+        let p = 1.0 - cdf.prob(st)
+        if p < pval: inc nSignificantDepartures
+        echo &"P({gName}>val|Gauss): {p:.4g}"
       if eDist in emit: echo &"cdf({gName}): ", cdf
+    nSignificantDepartures
 
-  clCfg.hTabVal4req = "NEED"
-  dispatch gof, positional="sample", help={
-    "sample": "x_1 x_2 .. x_n data sample",
-    "gofs":
-      "kolmogorovSmirnovD cramerVonMisesW2 andersonDarlingA2 vKuiper watsonU2",
-    "adj"   : "adjust GoF stat for: finiteN estimates",
-    "emit"  : "emits: z, PITz, stat, dist, prob",
-    "m"     : "number of n-samples to estimate CDF",
-    "knownM": "Gaussian of this known mean",
-    "knownV": "Gaussian of this known variance; 0=>adj=est",
-    "ran"   : "randomize() for sampling"}
+  dispatch gof, positional="sample", short={"knownM":'M',"knownV":'V',}, help={
+   "sample": "x_1 x_2 .. x_n data sample",
+   "gofs":
+     "kolmogorovSmirnovD cramerVonMisesW2 `andersonDarlingA2` vKuiper watsonU2",
+   "adj"   : "adjust GoF stat for: **estimates** finiteN",
+   "emit"  : "emits: z, PITz, stat, dist, prob",
+   "m"     : "number of n-samples to estimate CDF",
+   "knownM": "Gaussian of known *mean*",
+   "knownV": "Gaussian of known *var*; 0 => **estimates**",
+   "pval"  : "exit status = number of `prob` < `pval`",
+   "ran"   : "randomize() for sampling"}
