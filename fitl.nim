@@ -127,7 +127,7 @@ proc fitl*(cols: seq[string], wtCol=0, delim="w", sv=1e-8, xv=xvLOO, resids="",
       bK.add b                                                          #Record
     covMat(v, xpose(bK, boot, m), boot, m)      # Replace `v` w/boostrapped cov
     if covBoot in cov:echo fmtCov("bootstrap",v,m,covNorm in cov,covLabel in cov)
-    #XXX boot is broken; Also use bK to do bootstrap conf.ivals for coefs
+    #XXX --gc:arc breaks boot; Also use bK to do bootstrap conf.ivals for coefs
   if gofPar in gof: echo &"Param Significance Breakdown:\n", fmtPar("  ", b, v)
   if resF != nil: resF.close
   if logF != nil: logF.close
