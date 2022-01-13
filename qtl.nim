@@ -12,8 +12,8 @@ proc quantile*[T: SomeFloat, U: SomeFloat](x: openArray[T], Q: U): U =
   if qN >= N - 0.5: return x[n - 1]
   var iL, jL, iH, jH: int
   var xL, xH, cH, cL: float
-  jL = int(qN); iL = jL
-  xL = x[iL]
+  jL = int(qN); iL = jL                   #XXX Should really replace this scan
+  xL = x[iL]                              #    with a binary search.
   while iL > 0 and x[iL-1] == xL: dec(iL)
   while jL < n and x[jL] == xL: inc(jL)
   cL = 0.5 * float(iL + jL)
