@@ -142,8 +142,11 @@ when isMainModule: dispatch fitl, help = {
   "acf"   : "emit resid serial AutoCorrFunc up to this lag",
   "boot"  : "num bootstraps for Cov(b); 0=>estimated Cov(b)",
   "gof" : """emit goodness of fit diagnostics:
-  r2: R^2; csq: Chi-Square {aka SSR},df,pvalue
-  param: parameter significance breakdown""",
+  r2: R^2; xsq: Chi-Square {aka SSR},df,pvalue
+  param: parameter significance breakdown
+  GoF tests residuals are Gaussian:
+    kolmogorovSmirnovD cramerVonMisesW2
+    andersonDarlingA2 vKuiper watsonU2""",
   "cov"   : "emit Cov(b) with flags: est, norm, label",
   "log"   : "log to this path (trimming,model selection,..)",
   "trim": """trim pnts>="Nqtl(x/(2n)) sdevs" from regr surf
