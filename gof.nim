@@ -101,6 +101,13 @@ func prob*[F](cdf: seq[F], st: F): F =
   ## Return `P(x <= st)` {p-value}
   cdf.lowerBound(st)/cdf.len #XXX Interpolate via some local cubic polynom fit.
 
+proc gofTest*[F](ps: seq[F], mV=(0.0,1.0), g=gfA2, mods={gfEst}, m=5000): (F,F)=
+  ## Do whole test (stat+prob) calculation from u01ize'd probabilities `ps`.
+  result[0] = ps.gofStat(mV, g, mods, true)
+  var cdf: seq[F]
+  cdf.gofDist(ps.len, mV, g, mods, m)
+  result[1] = 1.0 - cdf.prob(result[0])
+
 when isMainModule:
   import cligen, strformat
   proc `$`(xs: seq[float]): string =
