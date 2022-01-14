@@ -1,7 +1,7 @@
 proc quantile*[T: SomeFloat, U: SomeFloat](x: openArray[T], Q: U): U =
   ## Compute Parzen Qmid Quantile given sorted openArray[SomeFloat].  For more
-  ## motivation of this definition, see Ma, Genton & Parzen 2011: Asymptotic
-  ## properties of sample quantiles of discrete distributions.  Personally, I
+  ## motivation of this definition, see Ma, Genton & Parzen 2011: "Asymptotic
+  ## properties of sample quantiles of discrete distributions".  Personally, I
   ## see this as far better than any alternative definition and the right
   ## generalization of ancient "mid-ranking ties" ideas in rank correlation
   ## calculations.  It is sadly not as widely used|well known as it should be.
@@ -30,3 +30,18 @@ proc quantile*[T: SomeFloat, U: SomeFloat](x: openArray[T], Q: U): U =
     cL = 0.5 * float(iL + jL)
   let r = (qN - cL) / (cH - cL)
   return U((1.0 - r) * xL  +  r * xH)
+
+when isMainModule:
+  import strutils, algorithm, cligen
+  proc qtl(ps: seq[float]) =
+    ## Read one column of numbers on stdin; Emit Parzen-interpolated quantiles
+    ## for probabilities `ps`. Eg.: *echo 1 1 2 4|tr ' ' '\\n'|qtl 0 .5 1*
+    ## writes *1.0 1.66.. 4.0*
+    var x: seq[float]
+    for line in stdin.lines: x.add parseFloat(line.strip)
+    x.sort
+    for i, p in ps:
+      if i > 0: stdout.write " "      
+      stdout.write x.quantile(p)
+    stdout.write '\n'
+  dispatch qtl
