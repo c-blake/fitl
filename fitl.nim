@@ -25,12 +25,14 @@ proc parseCols(cols: seq[string]): (string, seq[string]) =
     of 'm': result[0].add 'm'; result[1].add col[1..^1]
     else  : result[0].add '.'; result[1].add col
 
+var iNm: string
+var iFl: File
 proc s(vs: openArray[MSlice], j: int): MSlice {.inline.} =
   vs[if j < 0: vs.len + j else: j - 1]
 
 proc f(vs: openArray[MSlice]; i, j: int): F {.inline.} =
   try: result = if j == 0: F(1) else: F(parseFloat(s(vs, j)))
-  except: stderr.write &"stdin:{i}:non-numeric column {j}: \"{$s(vs,j)}\"\n"
+  except: stderr.write &"{iNm}:{i}:non-numeric column {j}: \"{$s(vs,j)}\"\n"
 
 proc parseInp(cols: seq[string]; sep: Sep; X: var seq[F];
               ixW=0): (int, seq[int], string) =
@@ -42,12 +44,12 @@ proc parseInp(cols: seq[string]; sep: Sep; X: var seq[F];
   let need = max(ixMx, -ixMn)
   var nums: seq[MSlice]
   var i = 0
-  for (cs, n) in stdin.getDelims:
+  for (cs, n) in iFl.getDelims:
     inc i
     if n > 0 and cs[0] != '#':
       sep.split MSlice(mem: cs, len: n), nums
       if nums.len < need:
-        stderr.write &"stdin:{i}:skipping too few columns ({nums.len}<{need})\n"
+        stderr.write &"{iNm}:{i}:skipping too few columns ({nums.len}<{need})\n"
       else:
         let w = if ixW == 0: F(1) else: F(1)/nums.f(i, ixW)
         for j in result[1]: xT.add w*nums.f(i, j)
@@ -70,15 +72,16 @@ proc fmtPar[F](leading: string; bs, v, bT: seq[F]): string =
       result.add formatFloat(bb.quantile(0.95),precision=digs);result.add "\n"
   result.setLen result.len - 1
 
-proc fitl*(cols: seq[string], wtCol=0, delim="w", sv=1e-8, xv=xvLOO, resids="",
-  acf=0, boot=0, gof:set[Gof]={}, cov:set[Cov]={}, log="", trim=F(0), its=0) =
-  ## Linear least squares parameter estimator for ASCII numbers on stdin.
+proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
+           resids="", acf=0, boot=0, gof: set[Gof]={}, cov: set[Cov]={}, log="",
+           trim=F(0), its=0) =
+  ## Linear least squares parameter estimator for ASCII numbers in `file`.
   ## Default output is an awk/gnuplot-like formula w/best fit coefs to make ys
   ## from xs.  Options control extra output.  The input format is just:
   ##   <yCol> <basis1_column> [ <basis2_column> .. ]
   ##     y1      basis1(x1)   [    basis2(x1)   .. ] { Permutable cols.
-  ##     y2      basis1(x2)   [    basis2(x2)   .. ]   This is just for
-  ##     .           .        [        .        .  ]   cols=1 2 3 4.. }
+  ##     y2      basis1(x2)   [    basis2(x2)   .. ]   1-origin numbers. }
+  ##     .           .        [        .        .  ]
   ##     .           .        [        .        .  ]
   ## NOTE: Input ^$ blanks & lines beginning with '#' are skipped.  colNo '0' ->
   ## 1 for all data points -- useful as both flat reciprocal weight (aka sigma)
@@ -87,12 +90,14 @@ proc fitl*(cols: seq[string], wtCol=0, delim="w", sv=1e-8, xv=xvLOO, resids="",
   if cols.len < 2: raise newException(HelpError,"Too few columns; Full ${HELP}")
   let resF = if resids.len != 0: open(resids, fmWrite)  else: nil
   let logF = if log.len    != 0: open(log   , fmAppend) else: nil
+  if file == "-": iNm = "stdin"; iFl = stdin
+  else: iNm = file; iFl = open(file)
   let sep = initSep(delim)
   let M = cols.len                      # total num columns
   let m = M - 1                         # num x/predictor columns
   var X: seq[F]                                # Parse cols,text->Y,DesignMatrix
   var (n,ixX,xfm) = parseInp(cols,sep,X,wtCol) #..as well as centr&stdize ctrls
-  if m > n: quit "fewer data rows on stdin than columns", 3
+  if m > n: quit &"fewer data rows in {iNm} than columns", 3
   var o = newSeq[F](M)                  # Offset/Origin for each column (0.0)
   var s = newSeq[F](M, 1.0)             # Scale to divide by to normalize data
   var b = newSeq[F](m) # Do not clobber X w/u;  Since X is col-major aka bck2bck
@@ -124,7 +129,7 @@ proc fitl*(cols: seq[string], wtCol=0, delim="w", sv=1e-8, xv=xvLOO, resids="",
   if gofV  in gof: echo fmtGf("KuiGaussRes", r.gofTest(mV, gfV ), 4, 3)
   if gofU2 in gof: echo fmtGf("WatGaussRes", r.gofTest(mV, gfU2), 4, 3)
   template slot: untyped = int(F(n)*rand(F(1.0))) # rand(n-1) unbiased but slow
-  var bT: seq[F]                               # Collect `b` for raw `Cov(b)`
+  var bT: seq[F]                                # Collect `b` for raw `Cov(b)`
   if boot > 0:                                  # Bootstrapped cov(parameters)
     randomize()                                 # Fit synthetic new data sets..
     var Xp = newSeq[F](n*M)                     #..of the *same size*.
@@ -141,11 +146,13 @@ proc fitl*(cols: seq[string], wtCol=0, delim="w", sv=1e-8, xv=xvLOO, resids="",
   if gofPar in gof: echo &"Param Significance Breakdown:\n", fmtPar("  ",b,v,bT)
   if resF != nil: resF.close
   if logF != nil: logF.close
+  if iFl != stdin: iFl.close
 
 when isMainModule: dispatch fitl, help = {
   "cols"  : "1-origin-yCol xCol.. 0=>all 1s; *[cs]=>Centr/Std",
-  "wtCol" : "1-origin sigma aka inverse weight column",
+  "file"  : "input file; \"-\" => stdin",
   "delim" : "`initSep` input delimiter; w=repeated whitespc",
+  "wtCol" : "1-origin sigma aka inverse weight column",
   "sv"    : "regularize: >0 SV clip <0 -manualRidge ==0 CV",
   "xv"    : "auto-ridge cross-validation score: GCV LOO",
   "resids": "log residuals to this pathname",
