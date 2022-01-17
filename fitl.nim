@@ -134,12 +134,14 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
     randomize()                                 # Fit synthetic new data sets..
     var Xp = newSeq[F](n*M)                     #..of the *same size*.
     var bK: seq[F]; var b = newSeq[F](m)
-    for k in 1..boot:                           #XXX --gc:arc breaks boot
-      for i in 0..<n: colCpy Xp[i].addr, X[slot()].addr, n, n, M, F.sizeof #Gen
-      thr=sv; r.setLen 0; v.setLen 0; h.setLen 0; var u = newSeq[F](n*m) #Reset
-      for j in 0..<M: o[j] = 0.0; s[j] = 1.0                  #offset&scale,too
-      linFit(Xp,n,M, b,u,w,v, r,h, o,s, xfm, thr,xv,logF)               #Fit
-      bK.add b                                                          #Record
+    r.setLen 0; h.setLen 0
+    let nn = xfm.needNormalize
+    for k in 1..boot:                           # Gen data,reset,get&save coefs
+      for i in 0..<n: colCpy Xp[i].addr, X[slot()].addr, n, n, M, F.sizeof
+      v.zero; thr=sv                                          # reset
+      if nn: o.zero; s.set 1.0
+      linFit(Xp,n,M, b,u,w,v, r,h, o,s,xfm, thr,xv,logF)      # get best fit b
+      bK.add b                                                # save b
     bT.setLen bK.len; bT.xpose(bK, boot, m)
     covMat(v, bT, boot, m)                     # Replace `v` w/boostrapped cov
     if covBoot in cov:echo fmtCov("bootstrap",v,m,covNorm in cov,covLabel in cov)
