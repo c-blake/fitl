@@ -91,3 +91,11 @@ proc newSeq*[T](len: Natural, val: T): seq[T] =
   ## Allocate & initialize a seq to a value
   result.setLen len
   for i in 0..<len: result[i] = val
+
+proc zero*[T](x: var openArray[T]) =
+  ## Zero memory of `x`.
+  zeroMem x[0].addr, x.len*T.sizeof
+
+proc set*[T](x: var openArray[T], v: T) =
+  ## Set every `x[i]` to `v`.
+  for e in mitems(x): e = v
