@@ -128,27 +128,24 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
   if gofA2 in gof: echo fmtGf("ADgaussRes" , r.gofTest(mV, gfA2), 4, 3)
   if gofV  in gof: echo fmtGf("KuiGaussRes", r.gofTest(mV, gfV ), 4, 3)
   if gofU2 in gof: echo fmtGf("WatGaussRes", r.gofTest(mV, gfU2), 4, 3)
-  template slot: untyped = int(F(n)*rand(F(1.0))) # rand(n-1) unbiased but slow
+  template slot: untyped = int(F(n)*rand(F(1))) # rand(n-1) unbiased but slow
   var bT: seq[F]                                # Collect `b` for raw `Cov(b)`
   if boot > 0:                                  # Bootstrapped cov(parameters)
     randomize()                                 # Fit synthetic new data sets..
     var Xp = newSeq[F](n*M)                     #..of the *same size*.
     var bK: seq[F]; var b = newSeq[F](m)
-    r.setLen 0; h.setLen 0
-    let nn = xfm.needNormalize
+    r.setLen 0; h.setLen 0; let nn = xfm.needNormalize
     for k in 1..boot:                           # Gen data,reset,get&save coefs
       for i in 0..<n: colCpy Xp[i].addr, X[slot()].addr, n, n, M, F.sizeof
-      v.zero; thr=sv                                          # reset
-      if nn: o.zero; s.set 1.0
+      v.zero; thr=sv; if nn: o.zero; s.set 1.0                # reset
       linFit(Xp,n,M, b,u,w,v, r,h, o,s,xfm, thr,xv,logF)      # get best fit b
       bK.add b                                                # save b
     bT.setLen bK.len; bT.xpose(bK, boot, m)
     covMat(v, bT, boot, m)                     # Replace `v` w/boostrapped cov
     if covBoot in cov:echo fmtCov("bootstrap",v,m,covNorm in cov,covLabel in cov)
   if gofPar in gof: echo &"Param Significance Breakdown:\n", fmtPar("  ",b,v,bT)
-  if resF != nil: resF.close
-  if logF != nil: logF.close
-  if iFl != stdin: iFl.close
+  (if resF != nil: resF.close); (if logF != nil: logF.close)
+  if iFl != stdin: iFl.close # stdin must have seen EOF; So close not so wrong.
 
 when isMainModule: dispatch fitl, help = {
   "cols"  : "1-origin-yCol xCol.. 0=>all 1s; *[cs]=>Centr/Std",
