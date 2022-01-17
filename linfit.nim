@@ -1,8 +1,7 @@
 import std/[strformat, strutils, sequtils, algorithm, math],
        spfun/[gauss, gamma], basicLA, svdx, min1d
-type
-  F8     = float
-  CrVal* = enum xvGCV = "GCV", xvLOO = "LOO"
+
+type CrVal* = enum xvGCV = "GCV", xvLOO = "LOO"
 
 proc colDel(x: pointer; n, m, J, sz: int) = # In-place column deletion
   if m < 2: return                          # 2*n memmoves copying most data
@@ -12,37 +11,37 @@ proc colDel(x: pointer; n, m, J, sz: int) = # In-place column deletion
     if J > 0: moveMem X[M*i*sz].addr, X[m*i*sz].addr, J*sz
     if J < M: moveMem X[(M*i + J)*sz].addr, X[(m*i + J + 1)*sz].addr, (M - J)*sz
 
-type CrossVal = object
+type CrossVal[F] = object
   n: int        # number of rows of U/data points
   m: int        # number of predictors/params; dim of z,w
-  z: seq[F8]    # z[j] sum(U_ij*y_i); Data vector in canonical coordinates
-  u: seq[F8]    # u[i+n*j] ith element of jth left singular vector
-  y: seq[F8]    # y[i] ith element of response vector
-  s: seq[F8]    # s[j] singular values
-  rss0: F8      # residual sum of squares for full model (input)
-  df: F8        # effective degrees of freedom (output)
+  z: seq[F]     # z[j] sum(U_ij*y_i); Data vector in canonical coordinates
+  u: seq[F]     # u[i+n*j] ith element of jth left singular vector
+  y: seq[F]     # y[i] ith element of response vector
+  s: seq[F]     # s[j] singular values
+  rss0: F       # residual sum of squares for full model (input)
+  df: F         # effective degrees of freedom (output)
 
-proc loo(o: var CrossVal; L: F8): F8 =
+proc loo[F](o: var CrossVal[F]; L: F): F =
   # Return Leave-One-Out Cross-Validation score also known as "Allen's PRESS" as
   # a function of ridge parameter L & in-hand Singular Value Decomposition.
   let n = o.n; let m = o.m
   for j in 0 ..< m: o.z[j] = sum0(i, n, o.u[i + n*j]*o.y[i]) # zj = Uj*y
-  var ss: F8
+  var ss: F
   for i in 0 ..< n:
-    var Hii, yEst: F8
+    var Hii, yEst: F
     for j in 0 ..< m:
       let adj = 1.0 / (1.0 + L / (o.s[j]*o.s[j]))
       yEst += o.u[i + n*j]*o.z[j]*adj
       Hii  += o.u[i + n*j]*o.u[i + n*j]*adj
     let pr = (o.y[i] - yEst)/(1.0 - Hii)            # prediction residual
     ss += pr*pr                                     # sum of its square
-  return ss / n.F8                                  # LOO aka Allen PRESS
+  return ss / n.F                                   # LOO aka Allen PRESS
 
-proc gcv(o: var CrossVal; L: F8): F8 =
+proc gcv[F](o: var CrossVal[F]; L: F): F =
   # Return Generalized Cross-Validation score as a function of ridge parameter L
   # &in-hand Singular Value Decomposition; Implementation follows Golub79 Eq2.3.
   let n = o.n; let m = o.m
-  var df  = F8(n - m)
+  var df  = F(n - m)
   var rss = 0.0
   if o.rss0 == 0.0:
     for j in 0 ..< m: o.z[j] = sum0(i,n, o.u[i + n*j]*o.y[i]) # zj=Uj*y
@@ -56,7 +55,7 @@ proc gcv(o: var CrossVal; L: F8): F8 =
     df  += adj
     rss += (adj*o.z[j])*(adj*o.z[j])
   o.df = df
-  return n.F8*rss/(df*df)   # Adding this to rss & re-eval makes =~ LOOCV
+  return n.F*rss/(df*df)    # Adding this to rss & re-eval makes =~ LOOCV
 
 proc linFit*[F](y, x: openArray[F]; n, m: int; b, u, s, v, r, h: var seq[F];
             thr: var F=1e-6; xv=xvLOO; log: File=nil): (F,F,F) {.discardable.} =
@@ -85,9 +84,9 @@ proc linFit*[F](y, x: openArray[F]; n, m: int; b, u, s, v, r, h: var seq[F];
   else:
     if thr < 0: thr = -thr                      # Manual ridge parameter
     else:                                       # GCV|LOO-optimal ridge param
-      var o = CrossVal(n: n, m: m, z: newSeq[F](m), u: u, y: y.toSeq, s: s)
-      proc xvScore(lam: F8): F8 = (if xv==xvGCV: gcv(o,lam) else: loo(o,lam))
-      minBrent(thr, F8(0), F8(svMx)*F8(n), xvScore, tol=0.001, itMx=99)
+      var o = CrossVal[F](n: n, m: m, z: newSeq[F](m), u: u, y: y.toSeq, s: s)
+      proc xvScore(lam: F): F = (if xv==xvGCV: gcv(o,lam) else: loo(o,lam))
+      minBrent(thr, F(0), F(svMx)*F(n), xvScore, tol=0.001, itMx=99)
     df = n.F
     for j in 0 ..< m:                           # adjust SVs; eff.deg.freedom
       var recipDen = 1.0 / (s[j]*s[j] + thr)

@@ -87,7 +87,7 @@ func gofStat*[F](sample: seq[F], mnVr: (F,F), gof=gfA2, mods=noMod, u01d=false):
   var sample = sample
   sample.gofStat mnVr, gof, mods, u01d
 
-proc gofDist*[F](cdf: var seq[F], n: int, mV=(0.0,1.0), gof=gfA2, mods=noMod, m=5000) =
+proc gofDist*[F](cdf: var seq[F], n: int, mV=(F(0),F(1)), gof=gfA2, mods=noMod, m=5000) =
   ## Fill `cdf` with CDF of GoF stat `gof` for sample size `n`.  Slow for large `n*m`.
   let (mu, sig) = (mV[0], sqrt(mV[1]))
   var sample = newSeq[F](n)
@@ -101,7 +101,7 @@ func prob*[F](cdf: seq[F], st: F): F =
   ## Return `P(x <= st)` {p-value}
   cdf.lowerBound(st)/cdf.len #XXX Interpolate via some local cubic polynom fit.
 
-proc gofTest*[F](ps: seq[F], mV=(0.0,1.0), g=gfA2, mods={gfEst}, m=5000): (F,F)=
+proc gofTest*[F](ps: seq[F], mV=(F(0),F(1)), g=gfA2, mods={gfEst}, m=5000): (F,F)=
   ## Do whole test (stat+prob) calculation from u01ize'd probabilities `ps`.
   result[0] = ps.gofStat(mV, g, mods, true)
   var cdf: seq[F]

@@ -106,7 +106,7 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
   var v = newSeq[F](m*m)                # Right sing.vectors/Cov(b) matrix
   var r = newSeq[F](n)                  # Fit Residuals; Q: conditional alloc?
   var h: seq[F]                         #TODO Hat-matrix/influence functions
-  var thr = sv
+  var thr = F(sv)
   let (ssR,df,ssY) = linFit(X,n,M, b,u,w,v, r,h, o,s, trim,its,xfm, thr,xv,logF)
   echo fmtModel(cols, ixX, M, b, v, o, s)       # emit the model
   if resF != nil: (for i in 0..<n: resF.write &"{r[i]:.11g}\n")
