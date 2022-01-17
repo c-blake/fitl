@@ -138,6 +138,11 @@ proc normalize*[F](x: var openArray[F]; n,M: int; xfm: string; o,s: var seq[F])=
       vmul x[j*n].addr, n, F(1)/(mx - mn)
     else: discard
 
+proc needNormalize*(xfm: string): bool =
+  ## Test if `xfm` implies normalize is a no-op.
+  for ch in xfm:
+    if ch in {'c','z','m'}: return true
+
 proc linFit*[F](X: var openArray[F]; n,M: int; b,u,s,v, r,h, oX,sX: var seq[F];
        xfm=""; thr: var F=1e-6; xv=xvLOO; log: File=nil):(F,F,F){.discardable.}=
   ## This wraps 2-input `linFit` to normalize predictors/response according to
