@@ -72,7 +72,8 @@ func u01ize*[F](xs: var seq[F], mnVr: (F, F)) =
   ## Convert into Z-scores, sort, and PIT-transform to be U(0,1)
   xs.zscore mnVr; xs.sort; xs.pitz
 
-func gofStat*[F](sample: var seq[F], mnVr: (F,F), gof=gfA2, mods=noMod, u01d=false): F =
+func gofStat*[F](sample: var seq[F], mnVr: (F, F), gof=gfA2, mods=noMod,
+                 u01d=false): F =
   ## Calculate goodness-of-fit stat for `sample` (clobbering `sample`).
   if not u01d: sample.u01ize(mnVr)
   case gof
@@ -82,13 +83,13 @@ func gofStat*[F](sample: var seq[F], mnVr: (F,F), gof=gfA2, mods=noMod, u01d=fal
   of gfU2: sample.watsonU2(mods)
   of gfA2: sample.andersonDarling(mods)
 
-func gofStat*[F](sample: seq[F], mnVr: (F,F), gof=gfA2, mods=noMod, u01d=false): F =
+func gofStat*[F](sample: seq[F], mnVr: (F, F), gof=gfA2, mods=noMod,
+                 u01d=false): F =
   ## Calculate goodness-of-fit stat for `sample` (preserving `sample`).
   var sample = sample
   sample.gofStat mnVr, gof, mods, u01d
 
-proc gofDist*[F](cdf: var seq[F], n: int, mV=(F(0),F(1)), gof=gfA2, mods=noMod, m=5000) =
-  ## Fill `cdf` with CDF of GoF stat `gof` for sample size `n`.  Slow for large `n*m`.
+template gofDistT(F, cdf, mV, gof, mods): untyped =
   let (mu, sig) = (mV[0], sqrt(mV[1]))
   var sample = newSeq[F](n)
   cdf.setLen 0
@@ -96,17 +97,32 @@ proc gofDist*[F](cdf: var seq[F], n: int, mV=(F(0),F(1)), gof=gfA2, mods=noMod, 
     for i in 0..<n: sample[i] = gauss.qtl(rand(1.0))*F(sig) + F(mu)
     cdf.add sample.gofStat(sample.mvars, gof, mods)
   cdf.sort
+proc gofDist*(cdf: var seq[float32], n: int, mV=(0f32,1f32), gof=gfA2,
+              mods=noMod, m=5000) =
+  ## Fill `cdf` w/CDF of GoF stat `gof` for sample size `n`. Slow for large n*m.
+  gofDistT(float32, cdf, mV, gof, mods)
+proc gofDist*(cdf: var seq[float64], n: int, mV=(0f64,1f64), gof=gfA2,
+              mods=noMod, m=5000) =
+  ## Fill `cdf` w/CDF of GoF stat `gof` for sample size `n`. Slow for large n*m.
+  gofDistT(float64, cdf, mV, gof, mods)
 
 func prob*[F](cdf: seq[F], st: F): F =
   ## Return `P(x <= st)` {p-value}
   cdf.lowerBound(st)/cdf.len #XXX Interpolate via some local cubic polynom fit.
 
-proc gofTest*[F](ps: seq[F], mV=(F(0),F(1)), g=gfA2, mods={gfEst}, m=5000): (F,F)=
-  ## Do whole test (stat+prob) calculation from u01ize'd probabilities `ps`.
+template gofTestTmpl(F, ps, mV, g, mods, m): untyped =
   result[0] = ps.gofStat(mV, g, mods, true)
-  var cdf: seq[F]
+  var cdf: seq[float32]
   cdf.gofDist(ps.len, mV, g, mods, m)
   result[1] = 1.0 - cdf.prob(result[0])
+proc gofTest*[float32](ps: seq[float32], mV=(0f32,1f32), g=gfA2, mods={gfEst},
+                       m=5000): (float32,float32)=
+  ## Do whole test (stat+prob) calculation from u01ize'd probabilities `ps`.
+  gofTestTmpl(float64, ps, mV, g, mods, m)
+proc gofTest*[float64](ps: seq[float64], mV=(0f64,1f64), g=gfA2, mods={gfEst},
+                       m=5000): (float64,float64)=
+  ## Do whole test (stat+prob) calculation from u01ize'd probabilities `ps`.
+  gofTestTmpl(float64, ps, mV, g, mods, m)
 
 when isMainModule:
   import cligen, strformat
