@@ -5,7 +5,7 @@ type
               gofD="kolmogorovSmirnovD"               , gofU2="watsonU2",
               gofW2="cramerVonMisesW2", gofA2="andersonDarlingA2"
   Cov* = enum covLabel="label", covNorm="norm", covEst="est", covBoot="boot"
-  F*   = float
+  F*   = float32
 
 proc colCpy(dst, src: pointer; nD, nS, m, sz: int) =  # To make bootstrap data
   let dD  = cast[uint](nD * sz)                       #..in a col-major world.
