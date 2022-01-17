@@ -154,9 +154,9 @@ proc linFit*[F](X: var openArray[F]; n,M: int; b,u,s,v, r,h, oX,sX: var seq[F];
   linFit(X[0..<n], X[n..^1], n,M-1, b,u,s,v, r,h, thr, xv, log)
          #^y slice, ^preds slice; Col-major makes this easy
 
-proc linFit*[F](X: var openArray[F]; n:var int; M:int; b,u,s,v,r,h,oX,sX: var seq[F];
-       trim=F(0), its=1; xfm=""; thr: var F=1e-6; xv=xvLOO;
-       log: File=nil): (F,F,F) {.discardable.} =
+proc linFit*[F](X: var openArray[F]; n: var int; M: int; b,u,s,v, r,h,
+                oX,sX: var seq[F]; trim=F(0), its=1; xfm=""; thr: var F=1e-6;
+                xv=xvLOO; log: File=nil): (F,F,F) {.discardable.} =
   ## This wraps 1-input `linFit` to trim outliers adding `trim` threshold (in
   ## "N(0,1)-sdev 'units'") & `its` max iterations.  (Doing more than 2..4 its
   ## is probably ill-advised, but it is also not obvious 1 is always enough.)
