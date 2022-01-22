@@ -95,9 +95,8 @@ proc linFit*[F](y, x: openArray[F]; n, m: int; b, u, s, v, r, h: var seq[F];
     if not log.isNil:
       log.write &"sThr: {thr:.4g} n-df: {n.F - df:.5g} 1/sAdj: "
       for j in 0 ..< m: log.write &"{s[j]:.4g}%s", (if j < m-1: " " else: "\n")
-  for k in 0 ..< m:                             # Calc best fit params b[]
-    b[k] = F(0)
-    for i in 0 ..< n: b[k] += sum0(j,m, v[k + m*j]*s[j]*u[i + n*j]*y[i])
+  for k in 0 ..< m:                             # Calc best fit coefs `b`
+    b[k] = sum0(i,n, sum0(j,m, v[k + m*j]*s[j]*u[i + n*j]*y[i]))
   var ssR, ssY: F
   if doR or doC:                                # residuals if requested|needed
     let (_, vY) = mvar(y); ssY = vY*F(n)
