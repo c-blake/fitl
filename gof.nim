@@ -109,6 +109,7 @@ proc gofDist*(cdf: var seq[float64], n: int, mV=(0f64,1f64), gof=gfA2,
 func prob*[F](cdf: seq[F], st: F): F =
   ## Return `P(x <= st)` {p-value}
   cdf.lowerBound(st)/cdf.len #XXX Interpolate via some local cubic polynom fit.
+  #NOTE Also, stats were adjusted by Stephens to be ~ independent of n.
 
 template gofTestTmpl(F, ps, mV, g, mods, m): untyped =
   result[0] = ps.gofStat(mV, g, mods, true)
