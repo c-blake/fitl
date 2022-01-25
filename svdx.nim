@@ -8,7 +8,7 @@ proc jacobi[F](a, b, c: F): (F, F) {.inline.} =
     result[0] = 1.0 / sqrt(1.0 + t * t)
     result[1] = -result[0] * t
   else:
-    result[0] = 1.0; result[1] = 1.0
+    result[0] = 1.0 # result[1] = 0.0   # cos=1, sin=0; cos^2+sin^2=1
 
 proc rot2[F](x, y: var F; co, sn: F) {.inline.} =
   let (u, v) = (x, y)                   # Apply 2D Givens Rotation
