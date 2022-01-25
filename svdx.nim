@@ -24,21 +24,23 @@ proc svdx*[F](xu, s, v: var openArray[F]; n, m: int; tol=1e-6; mxIt=40): F =
   ## s & v must be presized to m and m*m, respectively.  v.len==0 skips calc of
   ## right singular vectors (e.g. for symm X).  tol=max off-diag matrix element
   ## (in units of sqrt(Si*Sj)) to converge.  Returns largest singular value.
+  ## NOTE 1: Unsorted - sort[(s,j)..] to find the permutation if you need that.
+  ## NOTE 2: u*(s>=0)*vT has 2^m sign choices; A flip in v cancels one in u.
   let doV = v.len > 0
   let t = tol * tol
   if doV:
     for i in 0 ..< m: ve(i, i) = 1.0    # V = I
   for it in 1..mxIt:
-    var eMx = F(0)                      # Hestenes algo which is just cyclic
+    var eMx = F(0)                      # Hestenes Algo which is just cyclic
     for i in 0 ..< m:                   #..Givens Rotations by Jacobi Angles.
       for j in i + 1 ..< m:             # std upper triangle
         let a = dot(xe(0, i).addr, xe(0, i).addr, n) # compute (Xt*xe)_ij
         let b = dot(xe(0, j).addr, xe(0, j).addr, n)
         let c = dot(xe(0, i).addr, xe(0, j).addr, n)
-        let e = c * c / abs(a * b)
+        let e = c * c / (a * b)         # a, b, c all >= 0
         eMx = max(eMx, e)
-        if e > t:                       # calc Jacobi rot; apply to X
-          let (co, sn) = jacobi(a, b, c)
+        if e > t:                       # Find angle to annihilate off diag elts
+          let (co,sn) = jacobi(a, b, c) #..and then apply it all the way down u.
           for k in 0 ..< n  : rot2(xe(k, i), xe(k, j), co, sn)
           if doV:                       # optionally also apply to v cols
             for k in 0 ..< m: rot2(ve(k, i), ve(k, j), co, sn)
