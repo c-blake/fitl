@@ -172,38 +172,4 @@ proc linFit*[F](X: var openArray[F]; n: var int; M: int; b,u,s,v, r,h,
       if n == n0: break                 # No points trimmed => done
       if log != nil: log.write &"{n0-n} / {n0} > {t/rtReducedCsq} sds\n"
 
-proc fmtCov*[F](s: string; v: seq[F]; m=0; norm=false, label=false): string =
-  proc elt(i, j: int): F  =             # fmt cov/corr
-    if norm:
-      if i==j: sqrt(v[m*i + i])                       # std.errs
-      else   : v[m*i + j]/sqrt(v[m*i + i]*v[m*j + j]) # corr.coefs
-    else: v[m*i + j]
-  result.add s & "-" & (if norm: "stderr-corr" else: "covariance") & " matrix\n"
-  if label:                             # FULL SYMM. MATRIX WITH LABELS
-    for i in 0..<m:
-      for j in 0..<m: result.add &"{i} {j} {elt(i,j):#11.04g}\n"
-  else:                                 # UNLABELED LOWER TRIANGULAR
-    for i in 0..<m:
-      result.add repeat(' ', 11*i); result.add &"{elt(i,i):#10.04g}"
-      for j in i + 1..<m: result.add &" {elt(i,j):#+10.04g}"
-      result.add '\n'
-
-proc fmtBasis[F](ch: char; ix: int; o,s: F; sep: string): string =
-  let ch = ch.toLowerAscii
-  let pm = "+-"[int(o > F(0))]
-  result.add (if   ch == 'c'      : &"(${ix} {pm} {abs(o)})"
-              elif ch in {'z','m'}: &"(${ix} {pm} {abs(o)})/{s}"
-              else: &"${ix}")
-  result.add sep
-
-proc fmtModel*[F](cols: seq[string]; ixX: seq[int]; M: int;
-                  b, v, o, s: seq[F]): string =
-  result.add fmtBasis(cols[0][0], ixX[0], o[0], s[0], "= ")
-  for j in 1..<M:                       # Emit model: Y= & coeffs*Xj
-    let sep = if j==M-1: "\n" else: " + "
-    if ixX[j]==0: result.add &"{b[j-1]:.9g}"; result.add sep # No *1. 4intercept
-    else:
-      result.add &"{b[j-1]:.9g} *"
-      result.add fmtBasis(cols[j][0], ixX[j], o[j], s[j], sep)
-
 proc Q*[F](df, ssR: F): F = F(1) - gammaI(df/F(2), ssR/F(2))

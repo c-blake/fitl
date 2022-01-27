@@ -56,6 +56,39 @@ proc parseInp(cols: seq[string]; sep: Sep; X: var seq[F];
   result[0] = xT.len div cols.len
   X = xpose(xT, result[0], cols.len)
 
+proc fmtCov*[F](s: string; v: seq[F]; m=0; norm=false, label=false): string =
+  proc elt(i, j: int): F  =             # fmt cov/corr
+    if norm:
+      if i==j: sqrt(v[m*i + i])                       # std.errs
+      else   : v[m*i + j]/sqrt(v[m*i + i]*v[m*j + j]) # corr.coefs
+    else: v[m*i + j]
+  result.add s & "-" & (if norm: "stderr-corr" else: "covariance") & " matrix\n"
+  if label:                             # FULL SYMM. MATRIX WITH LABELS
+    for i in 0..<m:
+      for j in 0..<m: result.add &"{i} {j} {elt(i,j):#11.04g}\n"
+  else:                                 # UNLABELED LOWER TRIANGULAR
+    for i in 0..<m:
+      result.add repeat(' ', 11*i); result.add &"{elt(i,i):#10.04g}"
+      for j in i + 1..<m: result.add &" {elt(i,j):#+10.04g}"
+      result.add '\n'
+
+proc fmtBasis[F](ch: char; ix: int; o,s: F; sep: string): string =
+  let ch = ch.toLowerAscii
+  let pm = "+-"[int(o > F(0))]
+  result.add (if   ch == 'c'      : &"(${ix} {pm} {abs(o)})"
+              elif ch in {'z','m'}: &"(${ix} {pm} {abs(o)})/{s}"
+              else: &"${ix}")
+  result.add sep
+
+proc fmtModel*[F](cols: seq[string]; ixX: seq[int]; M: int;
+                  b, v, o, s: seq[F]): string =
+  result.add fmtBasis(cols[0][0], ixX[0], o[0], s[0], "= ")
+  for j in 1..<M:                       # Emit model: Y= & coeffs*Xj
+    let sep = if j==M-1: "\n" else: " + "
+    let bstr = fmtUncertainVal(b[j-1], sqrt(v[j-1 + (j-1)*(M-1)]), sigDigs=3)
+    if ixX[j]==0: result.add bstr & sep # No *1. 4intercept
+    else: result.add bstr & " *" & fmtBasis(cols[j][0], ixX[j], o[j], s[j], sep)
+
 proc fmtPar[F](leading: string; bs, v, bT: seq[F]): string =
   result.add &"{leading}param(sigma)\tsig/par\t5% .. 95%\n"
   for j, b in bs:
