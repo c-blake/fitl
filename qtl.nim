@@ -2,9 +2,10 @@ proc quantile*[T: SomeFloat, U: SomeFloat](x: openArray[T], Q: U): U =
   ## Compute Parzen Qmid Quantile given sorted openArray[SomeFloat].  For more
   ## motivation of this definition, see Ma, Genton & Parzen 2011: "Asymptotic
   ## properties of sample quantiles of discrete distributions".  Personally, I
-  ## see this as far better than any alternative definition and the right
+  ## see this as far better than any alternative definition and also the right
   ## generalization of ancient "mid-ranking ties" ideas in rank correlation
-  ## calculations.  It is sadly not as widely used|well known as it should be.
+  ## calculations (or even Wilcoxon's original 1945 paper).  Qmid is sadly not
+  ## as widely used|well known as it should be.
   let n = x.len; let N = float(n)
   if n < 1: return 0.0
   let qN = float(Q) * N
