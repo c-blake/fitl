@@ -206,7 +206,7 @@ proc match*(ds: openArray[(string, CDist)], pfx: string): int =
 
 when isMainModule:      # A trivial command line driver mostly for testing.
   import cligen; when defined(release): randomize()
-  proc cdists(distro="U01", nSamp=0, test=false,plot=false,modes=false,v=false)=
+  proc dists(distro="U01", nSamp=0, test=false,plot=false,modes=false,v=false)=
     var dno = 0
     try: dno = distros.match(distro)
     except IOError as e: echo e.msg; quit(1)
@@ -229,4 +229,4 @@ when isMainModule:      # A trivial command line driver mostly for testing.
         echo x, " ", if x > dist.support[0]: dist.pdf(x) else: 0.0
       echo dist.support[^1], " ", 0.0
     if modes: (for m in dist.modes: echo m)
-  dispatch cdists
+  dispatch dists
