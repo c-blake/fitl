@@ -9,4 +9,4 @@ requires    "nim >= 1.6.0"
 requires    "spfun >= 0.3.0"
 requires    "cligen >= 1.5.24"
 installExt  = @[ ".nim" ]
-bin         = @[ "fitl" ]
+bin         = @[ "fitl", "qtl" ]
