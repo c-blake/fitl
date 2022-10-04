@@ -196,7 +196,7 @@ when isMainModule: dispatch fitl, help = {
   GoF tests residuals are Gaussian:
     kolmogorovSmirnovD cramerVonMisesW2
     andersonDarlingA2 vKuiper watsonU2""",
-  "cov"   : "emit Cov(b) with flags: est, norm, label",
+  "cov"   : "emit Cov(b) with flags: est, norm, label, boot",
   "log"   : "log to this path (trimming,model selection,..)",
   "trim": """trim pnts>="Nqtl(x/(2n)) sdevs" from regr surf
  [x=num pts expected if resids REALLY Normal]""",
