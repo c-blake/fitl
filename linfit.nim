@@ -1,5 +1,6 @@
 import std/[strformat, strutils, sequtils, algorithm, math],
        spfun/[gauss, gamma], basicLA, svdx, min1d
+when not declared(File): import std/[syncio, formatfloat]
 
 type CrVal* = enum xvGCV = "GCV", xvLOO = "LOO"
 

@@ -127,6 +127,8 @@ proc gofTest*[float64](ps: seq[float64], mV=(0f64,1f64), g=gfA2, mods={gfEst},
 
 when isMainModule:
   import cligen, strformat
+  when not declared(File): import std/formatfloat
+
   proc `$`(xs: seq[float]): string =
     result.add $xs[0]
     for x in xs[1..^1]: result.add " "; result.add $x
