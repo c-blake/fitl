@@ -1,3 +1,4 @@
+when not declared(stdout): import std/[syncio, formatfloat]
 import std/[math, random, strformat], spfun/[gauss, cauchy]
 
 proc gen(x0=0.0, dx=0.25, n=40, p=2, mix=0.0, gaussScale=1.0, cauchScale=1.0,
