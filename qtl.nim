@@ -33,6 +33,7 @@ proc quantile*[T: SomeFloat, U: SomeFloat](x: openArray[T], q: U): U =
   return U((1.0 - r) * xL  +  r * xH)
 
 when isMainModule:
+  when not declared(stdin): import std/[syncio, formatfloat]
   import strutils, algorithm, cligen
   proc qtl(ps: seq[float]) =
     ## Read one column of numbers on stdin; Emit Parzen-interpolated quantiles

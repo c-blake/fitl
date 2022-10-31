@@ -56,6 +56,7 @@ proc minBrent*[F](x: var F; a, b: F; f: ScalarF[F]; tol=1e-7, itMx=100,
   fx
 
 when isMainModule:
+  when not declared(addFloat): import std/formatfloat
   var nEval = 0
   proc g(x: float): float = (inc nEval; ln(1.0 + (x - 2.0)*(x - 2.0)))
   var x: float

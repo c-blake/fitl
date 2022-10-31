@@ -54,6 +54,7 @@ proc svdx*[F](xu, s, v: var openArray[F]; n, m: int; tol=1e-6; mxIt=40): F =
   sMax
 
 when isMainModule:
+  when not declared(stdout): import std/[syncio, formatfloat]
   proc fmt[F](x: openArray[F]; n, m: int): string =
     for i in 0 ..< n:                   # format column major matrix
       for j in 0 ..< m: result.add ' '; result.add $x[i + n*j]

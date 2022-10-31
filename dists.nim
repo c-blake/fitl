@@ -1,4 +1,5 @@
 ## Module defines a common framework for continuous probability distributions.
+when not declared(stderr): import std/[syncio, formatfloat]
 import std/[math, algorithm, random, critbits, strutils], spfun/[gauss, cauchy]
 type
   T = float64 # Things may become generic over this; T to not confuse with F(x)

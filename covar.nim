@@ -41,5 +41,6 @@ proc covMat*[F](x: openArray[F]; m, n: int): seq[F] =
   covMat(result, x, m, n)
 
 when isMainModule:
+  when not declared(stdout): import std/formatfloat
   echo corrAuto([1.0, 1.9, 3.2, 4.1])
   echo covMat([ 1.0, 2, 3, 4, 5, 6, 7, 8 ], 4, 2)
