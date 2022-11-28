@@ -14,7 +14,7 @@ template sum0*(i, lim, ex: untyped): untyped =
   block:
     var i {.inject.}: type(lim)   # put i in scope for ex(i); init to 0
     var tot: type(ex)             # accumulator type taken from ex
-    for i in i ..< lim: tot += ex # make i same type as lim & read-only within ex
+    for i in 0 ..< lim: tot += ex # make i same type as lim & read-only within ex
     tot
 
 template Sum*[T](i; itr: iterable[T]; ex): untyped =
