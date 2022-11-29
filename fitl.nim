@@ -1,5 +1,6 @@
-import std/[strformat, math, random, strutils, algorithm], spfun/studentT,
-       cligen, cligen/[osUt, mslice, strUt], basicLA, covar, linfit, gof, qtl
+import std/[strformat, math, random, strutils, algorithm],
+       cligen, cligen/[osUt, mslice, strUt],
+       spfun/studentT, fitl/[basicLA, covar, linfit, gof, qtl]
 when not declared(File): import std/[syncio, formatfloat]
 type
   Gof* = enum gofR2="r2", gofXsq="xsq", gofPar="param", gofV="vKuiper",
