@@ -116,7 +116,7 @@ autocorrelation is not yet done but would not take much convincing!)
 Ideally, if you are not in an automated setting, you should visually inspect
 residuals with `fitl --resids`.
 
-## Feature Discovery-(ical):
+## ..And Features Automatical (with apologies to the Modern Major General...):
 
 In recent times, "machine learning" has become popular.  This is basically
 applied stats with a "Just predict, by hook or by crook" focus rather than more
