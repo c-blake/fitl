@@ -183,7 +183,7 @@ let distros* = {"U01":dU, "Exp": dExp,  #TODO Check supports&modes; Maybe plot?
 proc match*(ds: openArray[(string, CDist)], pfx: string): int =
   ## Let end users use short names for any {} of CDist's, e.g. `distros`.
   try: return parseInt(pfx) - 1
-  except: discard
+  except CatchableError: discard
   let pfxNorm = pfx.toLowerAscii        # Normalized & Canonical strings
   var allNorm, allCanon, allNum: seq[string]
   var cbt: CritBitTree[(string, int)]

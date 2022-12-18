@@ -34,7 +34,7 @@ proc s(vs: openArray[MSlice], j: int): MSlice {.inline.} =
 
 proc f(vs: openArray[MSlice]; i, j: int): F {.inline.} =
   try: result = if j == 0: F(1) else: F(parseFloat(s(vs, j)))
-  except: stderr.write &"{iNm}:{i}:non-numeric column {j}: \"{$s(vs,j)}\"\n"
+  except Ce: stderr.write &"{iNm}:{i}:non-numeric column {j}: \"{$s(vs,j)}\"\n"
 
 proc parseInp(cols: seq[string]; sep: Sep; X: var seq[F];
               ixW=0): (int, seq[int], string) =
