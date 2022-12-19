@@ -38,7 +38,8 @@ func cramerVonMises*[F](ps: seq[F], mods=noMod): F =
   let n = ps.len
   let nI2 = F(0.5)/F(n) #NOTE: formula converted to 0-origin indexes.
   result = nI2/F(6) + sum0(j, n, (ps[j] - F(2*j + 1)*nI2)^2)    # ds86 Eq 4.2
-  if gfFin in mods: result *= (F(1) - F(0.4)/F(n) + F(0.6)/F(n*n))*(F(1) + F(1)/F(n))
+  if gfFin in mods:
+    result *= (F(1) - F(0.4)/F(n) + F(0.6)/F(n*n))*(F(1) + F(1)/F(n))
   # Stephens1970, ds86 Table 4.2 & Eq6.19 all say '*',but '/' in ^^^ E.g. 4.4.1
   if gfEst in mods: result *= F(1) + nI2
 
@@ -48,7 +49,8 @@ func watsonU2*[F](ps: seq[F], mods=noMod): F =
   let nI2 = F(0.5)/nF   #NOTE: Formula converted to 0-origin indexes.
   let mn = sum0(j, n, F(ps[j]))/nF                              # ds86 Eq 6.18
   result = nI2/F(6) - nF*(mn - 0.5)^2 + sum0(j, n, (ps[j] - F(2*j + 1)*nI2)^2)
-  if gfFin in mods: result *= (F(1) - F(0.1)/F(n) + F(0.1)/F(n*n))*(F(1) + F(0.8)/F(n))
+  if gfFin in mods:
+    result *= (F(1) - F(0.1)/F(n) + F(0.1)/F(n*n))*(F(1) + F(0.8)/F(n))
   # Stephens1970, ds86 Table 4.2 & Eq6.19 all say '*',but '/' in ^^^ E.g. 4.4.1
   if gfEst in mods: result *= F(1) + nI2
 

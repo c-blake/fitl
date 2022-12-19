@@ -14,7 +14,7 @@ template sum0*(i, lim, ex: untyped): untyped =
   block:
     var i {.inject.}: type(lim)   # put i in scope for ex(i); init to 0
     var tot: type(ex)             # accumulator type taken from ex
-    for i in 0 ..< lim: tot += ex # make i same type as lim & read-only within ex
+    for i in 0 ..< lim: tot += ex # make i same type as lim &read-only within ex
     tot
 
 template Sum*[T](i; itr: iterable[T]; ex): untyped =
@@ -72,8 +72,8 @@ func mnmx*[F: SomeFloat](xs: openArray[F]): (F, F) =
 
 func mvar*[F: SomeFloat](xs: openArray[F]): (F, F) =
   ## One pass mean & variance; NOTE: pop variance (1/n).
-  if xs.len > 0: # --passC:-ffast-math can autovec whole loop into vsubp[sd]/vaddp[sd] insns
-    let dx = xs[0]
+  if xs.len > 0:    # --passC:-ffast-math can autovec whole loop into
+    let dx = xs[0]  #..very tight vsubp[sd]/vaddp[sd] instructions.
     var av, vr: F
     for x in xs:
       let x = x - dx; av += x; vr += x*x

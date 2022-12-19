@@ -6,7 +6,7 @@ type
   Gof* = enum gofR2="r2", gofXsq="xsq", gofPar="param", gofV="vKuiper",
               gofD="kolmogorovSmirnovD"               , gofU2="watsonU2",
               gofW2="cramerVonMisesW2", gofA2="andersonDarlingA2"
-  Cov* = enum covLabel="label", covNorm="norm", covEst="est", covBoot="boot"
+  Cov* = enum covLab="label", covNorm="norm", covEst="est", covBoot="boot"
   F*   = float32
 
 proc colCpy(dst, src: pointer; nD, nS, m, sz: int) =  # To make bootstrap data
@@ -148,7 +148,7 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
   for lag in 1..acf:                            # Maybe emit resid AutoCorrFunc
     let ac = corrAuto(r, lag)
     echo &"ResidAutoCorr-Lag-{lag}: {ac:.5f}\t{F(1) - corrP(ac, n - lag):.5f}"
-  if covEst in cov: echo fmtCov("estimated",v,m,covNorm in cov, covLabel in cov)
+  if covEst in cov: echo fmtCov("estimated",v,m,covNorm in cov, covLab in cov)
   if gofR2  in gof: echo &"r-squared: {F(1) - ssR/(ssY*s[0]):.6g}"
   if gofXsq in gof: echo &"Chi-sqr: {ssR:.4g} nu: {df:.4g} p: {Q(df, ssR):.5g}"
   var mV: (F, F)
@@ -177,7 +177,7 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
       bK.add b                                                # save b
     bT.setLen bK.len; bT.xpose(bK, boot, m)
     covMat(v, bT, boot, m)                     # Replace `v` w/boostrapped cov
-    if covBoot in cov:echo fmtCov("bootstrap",v,m,covNorm in cov,covLabel in cov)
+    if covBoot in cov: echo fmtCov("bootstrap",v,m,covNorm in cov,covLab in cov)
   if gofPar in gof: echo &"Param Significance Breakdown:\n", fmtPar("  ",b,v,bT)
   (if resF != nil: resF.close); (if logF != nil: logF.close)
   if iFl != stdin: iFl.close # stdin must have seen EOF; So close not so wrong.
