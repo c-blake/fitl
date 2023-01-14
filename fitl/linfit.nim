@@ -16,9 +16,9 @@ type CrossVal[F] = object
   n: int        # number of rows of U/data points
   m: int        # number of predictors/params; dim of z,w
   z: seq[F]     # z[j] sum(U_ij*y_i); Data vector in canonical coordinates
-  u: seq[F]     # u[i+n*j] ith element of jth left singular vector
+  u: ptr seq[F] # u[i+n*j] ith element of jth left singular vector
   y: seq[F]     # y[i] ith element of response vector
-  s: seq[F]     # s[j] singular values
+  s: ptr seq[F] # s[j] singular values
   rss0: F       # residual sum of squares for full model (input)
   df: F         # effective degrees of freedom (output)
 
@@ -26,14 +26,14 @@ proc loo[F](o: var CrossVal[F]; L: F): F =
   # Return Leave-One-Out Cross-Validation score also known as "Allen's PRESS" as
   # a function of ridge parameter L & in-hand Singular Value Decomposition.
   let n = o.n; let m = o.m
-  for j in 0 ..< m: o.z[j] = sum0(i, n, o.u[i + n*j]*o.y[i]) # zj = Uj*y
+  for j in 0 ..< m: o.z[j] = sum0(i, n, o.u[][i + n*j]*o.y[i]) # zj = Uj*y
   var ss: F
   for i in 0 ..< n:
     var Hii, yEst: F
     for j in 0 ..< m:
-      let adj = 1.0 / (1.0 + L / (o.s[j]*o.s[j]))
-      yEst += o.u[i + n*j]*o.z[j]*adj
-      Hii  += o.u[i + n*j]*o.u[i + n*j]*adj
+      let adj = 1.0 / (1.0 + L / (o.s[][j]*o.s[][j]))
+      yEst += o.u[][i + n*j]*o.z[j]*adj
+      Hii  += o.u[][i + n*j]*o.u[][i + n*j]*adj
     let pr = (o.y[i] - yEst)/(1.0 - Hii)            # prediction residual
     ss += pr*pr                                     # sum of its square
   return ss / n.F                                   # LOO aka Allen PRESS
@@ -45,14 +45,14 @@ proc gcv[F](o: var CrossVal[F]; L: F): F =
   var df  = F(n - m)
   var rss = 0.0
   if o.rss0 == 0.0:
-    for j in 0 ..< m: o.z[j] = sum0(i,n, o.u[i + n*j]*o.y[i]) # zj=Uj*y
+    for j in 0 ..< m: o.z[j] = sum0(i,n, o.u[][i + n*j]*o.y[i]) # zj=Uj*y
     for i in 0 ..< n:                               # r = y - yEst = y - U.z
-      let yEst = sum0(j,m, o.u[i + n*j]*o.z[j])
+      let yEst = sum0(j,m, o.u[][i + n*j]*o.z[j])
       rss += (o.y[i] - yEst)*(o.y[i] - yEst)        # rss against OLS yEst
     o.rss0 = rss
   else: rss = o.rss0
   for j in 0 ..< m:
-    let adj = 1.0 / (1.0 + o.s[j]*o.s[j] / L)       # L-adjustment for s[j]
+    let adj = 1.0 / (1.0 + o.s[][j]*o.s[][j] / L)   # L-adjustment for s[j]
     df  += adj
     rss += (adj*o.z[j])*(adj*o.z[j])
   o.df = df
@@ -85,8 +85,9 @@ proc linFit*[F](y, x: openArray[F]; n, m: int; b, u, s, v, r, h: var seq[F];
   else:
     if thr < 0: thr = -thr                      # Manual ridge parameter
     else:                                       # GCV|LOO-optimal ridge param
-      var o = CrossVal[F](n: n, m: m, z: newSeq[F](m), u: u, y: y.toSeq, s: s)
-      proc xvScore(lam: F): F = (if xv==xvGCV: gcv(o,lam) else: loo(o,lam))
+      var o = CrossVal[F](n: n, m: m, z: newSeq[F](m),
+                          u: u.addr, y: y.toSeq, s: s.addr)
+      proc xvScore(lam: F): F = (if xv == xvGCV: o.gcv(lam) else: o.loo(lam))
       minBrent(thr, F(0), F(svMx)*F(n), xvScore, tol=0.001, itMx=99)
     df = n.F
     for j in 0 ..< m:                           # adjust SVs; eff.deg.freedom
