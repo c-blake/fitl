@@ -6,7 +6,7 @@ license     = "MIT/ISC"
 
 # Deps
 requires    "nim >= 1.6.0"
-requires    "cligen >= 1.5.24"
+requires    "cligen >= 1.5.24 & < 2.0.0"
 requires    "spfun >= 0.3.0"
 skipDirs    = @["fitl"]
 installExt  = @[".nim"]
