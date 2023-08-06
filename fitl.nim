@@ -109,7 +109,7 @@ proc fmtPar[F](leading: string; bs, v, bT: seq[F]): string =
 
 proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
            resids="", acf=0, boot=0, gof: set[Gof]={}, cov: set[Cov]={}, log="",
-           trim=F(0), its=0) =
+           trim=0f32, its=0) =
   ## Linear least squares parameter estimator for ASCII numbers in `file`.
   ## Default output is an awk/gnuplot-like formula w/best fit coefs to make ys
   ## from xs.  Options control extra output.  The input format is just:
