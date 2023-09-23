@@ -1,5 +1,5 @@
 ## Not so rotten self-contained SVD in 42 lines of non-comment/blank code
-from math import sqrt, copySign; from basicLA import dot
+from math import sqrt, copySign; from basicLA import dot, sum0
 
 proc jacobi[F](a, b, c: F): (F, F) {.inline.} =
   if abs(2.0 * c) != 0.0:               # return (cos,sin)(Jacobi Angle)
@@ -52,6 +52,33 @@ proc svdx*[F](xu, s, v: var openArray[F]; n, m: int; tol=1e-6; mxIt=40): F =
     let sInv = 1.0 / s[j]               # also normalize U
     for i in 0 ..< n: xe(i, j) *= sInv
   sMax
+
+template toOA(p, n) = toOpenArray[F](p, 0, n - 1)
+proc polyFit*[F](b: var seq[F]; x,y,w: openArray[F], m=3, svThr=1e-6, tol=1e-6)=
+  ## Fill `b` with `m` least-squares-best fit coefs in ascending order by power
+  ## of polynomial model for y_i(x_i) maybe weighted by w_i.  w.len==0 => w_i=1.
+  ## `svThresh` is a singular value threshold in units of the max SV.  Smaller
+  ## SVs are set to 0 for numerical stability even with (near) collinearities.
+  let n = x.len
+  if n < m: raise newException(ValueError, "n < m")
+  if y.len != n: raise newException(ValueError, "y.len != x.len")
+  if w.len>0 and w.len!=n: raise newException(ValueError, "w.len != x.len")
+  if m < 1: raise newException(ValueError, "num.coefs m < 1")
+  b.setLen (1 + 1 + m)*m + n*(m + 1)    # Output b, s, v, weighted Design Matrix
+  var xuy = cast[ptr UncheckedArray[F]](b[(m + 2)*m].addr)
+  for i in 0..<n:                       # Populate Design Matrix
+    var val = if w.len > 0: w[i] else: F(1)
+    xuy[i + n*0] = val                  # 0-th power of x[i] is 1.0
+    for j in 1..<m:
+      val *= x[i]; xuy[i + n*j] = val   # Build up & assign m-th power of x[i]
+    xuy[i + n*m] = y[i]*(if w.len > 0: w[i] else: F(1)) # weight y[i]
+  var s = cast[ptr UncheckedArray[F]](b[m].addr)   # skip b
+  var v = cast[ptr UncheckedArray[F]](b[m+m].addr) # skip b & s
+  let thr = svThresh*svdx(toOA(xuy, n*m), toOA(s, m), toOA(v, m*m), n, m, tol)
+  for j in 0..<m: s[j] = if s[j] < thr: F(0) else: F(1)/s[j]
+  for k in 0..<m:                       # Calc best fit coefs (often beta)
+    b[k] = sum0(j,m, sum0(i,n, v[k + m*j]*s[j]*xuy[i + n*j]*xuy[i + n*m]))
+  b.setLen m
 
 when isMainModule:
   when not declared(stdout): import std/[syncio, formatfloat]
