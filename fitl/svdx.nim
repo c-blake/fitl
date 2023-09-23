@@ -57,8 +57,8 @@ template toOA(p, n) = toOpenArray[F](p, 0, n - 1)
 proc polyFit*[F](b: var seq[F]; x,y,w: openArray[F], m=3, svThr=1e-6, tol=1e-6)=
   ## Fill `b` with `m` least-squares-best fit coefs in ascending order by power
   ## of polynomial model for y_i(x_i) maybe weighted by w_i.  w.len==0 => w_i=1.
-  ## `svThresh` is a singular value threshold in units of the max SV.  Smaller
-  ## SVs are set to 0 for numerical stability even with (near) collinearities.
+  ## `svThr` is a singular value threshold in units of the max SV.  Smaller SVs
+  ## are set to 0 for numerical stability even with (near) collinearities.
   let n = x.len
   if n < m: raise newException(ValueError, "n < m")
   if y.len != n: raise newException(ValueError, "y.len != x.len")
@@ -74,7 +74,7 @@ proc polyFit*[F](b: var seq[F]; x,y,w: openArray[F], m=3, svThr=1e-6, tol=1e-6)=
     xuy[i + n*m] = y[i]*(if w.len > 0: w[i] else: F(1)) # weight y[i]
   var s = cast[ptr UncheckedArray[F]](b[m].addr)   # skip b
   var v = cast[ptr UncheckedArray[F]](b[m+m].addr) # skip b & s
-  let thr = svThresh*svdx(toOA(xuy, n*m), toOA(s, m), toOA(v, m*m), n, m, tol)
+  let thr = svThr*svdx(toOA(xuy, n*m), toOA(s, m), toOA(v, m*m), n, m, tol)
   for j in 0..<m: s[j] = if s[j] < thr: F(0) else: F(1)/s[j]
   for k in 0..<m:                       # Calc best fit coefs (often beta)
     b[k] = sum0(j,m, sum0(i,n, v[k + m*j]*s[j]*xuy[i + n*j]*xuy[i + n*m]))
