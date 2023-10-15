@@ -207,15 +207,14 @@ proc match*(ds: openArray[(string, CDist)], pfx: string): int =
 
 when isMainModule:      # A trivial command line driver mostly for testing.
   import cligen; when defined(release): randomize()
-  proc dists(distro="U01", nSamp=0, test=false,plot=false,modes=false,v=false)=
+  proc dists(distro="U01", nSamp=0, x=0.25, plot=false, modes=false, v=false) =
     var dno = 0
     try: dno = distros.match(distro)
     except IOError as e: echo e.msg; quit(1)
     if v: stderr.write "Distro[", dno+1, "]: ", distros[dno][0], '\n'
     let dist = distros[dno][1]
     for i in 1..nSamp: echo dist.gen()
-    if test:
-      let x = 0.125     # All Ds != 0 here; A whole domain test is out of scope.
+    if x != 0.25:       # All Ds != 0 @0.125; Whole domain test is out of scope
       let h = 5e-5      # for numerical derivative of CDF
       for (name, distro) in distros:
         let (pdf, cdf, qtl, _, _, _) = distro
