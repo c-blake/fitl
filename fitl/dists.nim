@@ -91,9 +91,9 @@ let dLaplace* = PD(if x < z : pH*exp(x) else: pH*exp(-x),
                    if p < pH: ln(p2*p)  else: -ln(p2 - p2*p), @[m6, p6], @[z])
 
 let dTri* = PD(
-  if x < -o: z elif x < z : o + x          elif x < o: o - x          else: z,
-  if x < -o: z elif x < z : x + x*x*pH     elif x < o: x - x*x*pH     else: o,
-  if p < z : z elif p < pH: o-sqrt(o-p2*p) elif p < o: sqrt(o+p2*p)-o else: o,
+  if x < -o: z elif x < z : o + x         elif x < o: o - x            else: z,
+  if x < -o: z elif x < z : pH*(x+o)^2    elif x < o: o - pH*(o-x)^2   else: o,
+  if p < z : z elif p < pH: -o+sqrt(p2*p) elif p < o: o-sqrt(p2*(o-p)) else: o,
   @[-o, o], @[z])                       ## Triangular on [-1,1]
 
 let dLogNormal* = PD(gauss.pdf[T](ln(x))/x, gauss.cdf[T](ln(x)),
@@ -216,12 +216,12 @@ when isMainModule:      # A trivial command line driver mostly for testing.
     for i in 1..nSamp: echo dist.gen()
     if x != 0.25:       # All Ds != 0 @0.125; Whole domain test is out of scope
       let h = 5e-5      # for numerical derivative of CDF
-      for (name, distro) in distros:
+      for (nm, distro) in distros:
         let (pdf, cdf, qtl, _, _, _) = distro
         let p = pdf(x); let c = cdf(x); let q = qtl(c)
         let dc = (cdf(x + h) - c)/h
-        if abs(p/dc - 1) > 3e-4:echo name," cdf|pdf mismatch; pd: ",p," dc: ",dc
-        if abs(q  -  x) > 1e-4: echo name," cdf|qtl mismatch; cd: ",c," qt: ",q
+        if abs(p/dc - 1) > 3e-4:echo nm," dCdf!=pdf; x: ",x," pd: ",p," dc: ",dc
+        if abs(q  -  x) > 1e-4: echo nm," qtl(c)!=I; x: ",x," cd: ",c," qt: ",q
     if plot:
       let scl = (dist.support[^1] - dist.support[0])/4096.0
       for i in 0..4095:
