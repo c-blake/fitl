@@ -1,5 +1,5 @@
 # Package
-version     = "0.3.4"
+version     = "0.3.5"
 author      = "Charles Blake"
 description = "Self-contained fit of linear models with regression diagnostics"
 license     = "MIT/ISC"
