@@ -219,10 +219,12 @@ when isMainModule:      # A trivial command line driver mostly for testing.
       let h = 5e-5      # for numerical derivative of CDF
       for (nm, distro) in distros:
         let (pdf, cdf, qtl, _, _, _) = distro
-        let p = pdf(x); let c = cdf(x); let q = qtl(c)
-        let dc = (cdf(x + h) - c)/h
-        if abs(p/dc - 1) > 3e-4:echo nm," dCdf!=pdf; x: ",x," pd: ",p," dc: ",dc
-        if abs(q  -  x) > 1e-4: echo nm," qtl(c)!=I; x: ",x," cd: ",c," qt: ",q
+        let p = pdf(x)
+        if p > 0:
+          let c = cdf(x); let q = qtl(c)
+          let dc = (cdf(x + h) - c)/h
+          if abs(p/dc-1) > 3e-4:echo nm," dCdf!=pdf; x: ",x," pd: ",p," dc: ",dc
+          if abs(q - x) > 1e-4: echo nm," qtl(c)!=I; x: ",x," cd: ",c," qt: ",q
     if plot:
       let scl = (dist.support[^1] - dist.support[0])/4096.0
       for i in 0..4095:
