@@ -14,8 +14,7 @@ template newton(p, cdf, pdf, support, x0, fTol) {.dirty.}= # [pc]df must use `x`
   for it in 1..50:    # Quadratically cvgent. If 50 fails,likely nothing works
     let pr = (cdf) - p
     if abs(pr) < fTol and it > 1: return x
-    x -= pr / (pdf)
-    x = min(max(x, support[0]), support[^1])  # Keep bounded on support[]
+    x -= pr / (pdf) # x=min(max(x, support[0]), support[^1]) # breaks BiLogPeak
   result = if p < T(0.5): support[0] else: support[^1]
 
 proc mix*(compons: seq[(T, CDist, T, T)]; support: seq[T] = @[],
@@ -150,7 +149,7 @@ let distros* = {"U01":dU, "Exp": dExp,  #TODO Check supports&modes; Maybe plot?
     elif x < -oT    : pH*(o-(p4*(x.abs-oT)-3*pow(abs(-x-oT), p4*o3)))
     elif x < oT     : pH
     elif x < T(1.1) : pH + 0.5*(4*(x-0.1)-3*pow(abs(x-0.1), p4*o3))
-    else: 1.0, @[-T(1.1), -oT, oT, T(1.1)], @[-oT, oT], T(-1.09) + p*T(2.08)),
+    else: 1.0, @[-T(1.1), -oT, oT, T(1.1)], @[-oT, oT], T(-1.1) + p*T(2.2)),
   "TriModeU": mix(@[(pQ,dU,T(-20.1),oT), (pH,dU,-o,p2), (pQ,dU,p20,oT)]),
   "Sawtooth": mix(@[(oT, dTri,T(-9),o), (oT, dTri,T(-7),o), (oT, dTri,T(-5),o),
                     (oT, dTri,T(-3),o), (oT, dTri,T(-1),o), (oT, dTri,T(+1),o),
