@@ -224,8 +224,8 @@ when isMainModule:      # A trivial command line driver mostly for testing.
         if p > 0:
           let c = cdf(x); let q = qtl(c)
           let dc = (cdf(x + h) - c)/h
-          if C(p/dc, 1, 3e-4): echo nm," dCdf!=pdf; x: ",x," pd: ",p," dc: ",dc
-          if C(q   , x, 2e-4): echo nm," qtl(c)!=I; x: ",x," cd: ",c," qt: ",q
+          if C(p/dc, 1, 1e-4): echo nm," dCdf!=pdf; x: ",x," pd: ",p," dc: ",dc
+          if C(q   , x, 1e-4): echo nm," qtl(c)!=I; x: ",x," cd: ",c," qt: ",q
     if plot:
       let scl = (dist.support[^1] - dist.support[0])/4096.0
       for i in 0..4095:
