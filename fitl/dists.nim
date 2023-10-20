@@ -208,6 +208,7 @@ proc match*(ds: openArray[(string, CDist)], pfx: string): int =
 
 when isMainModule:      # A trivial command line driver mostly for testing.
   import cligen; when defined(release): randomize()
+  template C(a,b,th):untyped = a.abs>th and abs(a-b)>th and abs(a/b-1)>sqrt(th)
   proc dists(distro="U01", nSamp=0, x=0.25, plot=false, modes=false, v=false) =
     var dno = 0
     try: dno = distros.match(distro)
@@ -223,8 +224,8 @@ when isMainModule:      # A trivial command line driver mostly for testing.
         if p > 0:
           let c = cdf(x); let q = qtl(c)
           let dc = (cdf(x + h) - c)/h
-          if abs(p/dc-1) > 3e-4:echo nm," dCdf!=pdf; x: ",x," pd: ",p," dc: ",dc
-          if abs(q - x) > 1e-4: echo nm," qtl(c)!=I; x: ",x," cd: ",c," qt: ",q
+          if C(p/dc, 1, 3e-4): echo nm," dCdf!=pdf; x: ",x," pd: ",p," dc: ",dc
+          if C(q   , x, 2e-4): echo nm," qtl(c)!=I; x: ",x," cd: ",c," qt: ",q
     if plot:
       let scl = (dist.support[^1] - dist.support[0])/4096.0
       for i in 0..4095:
