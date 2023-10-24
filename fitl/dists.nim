@@ -219,14 +219,14 @@ when isMainModule:      # A trivial command line driver mostly for testing.
   import cligen; when defined(release): randomize()
   template C(a,b,th):untyped = a.abs>th and abs(a-b)>th and abs(a/b-1)>sqrt(th)
   type Plot = enum pNone="none", pPDF="pdf", pCDF="cdf", pQtl="qtl"
-  proc dists(distro="U01", nSamp=0, x=0.875, plot=pNone, mode=false, v=false) =
+  proc dists(distro="U01", nSamp=0, x=Inf, plot=pNone, mode=false, v=false) =
     var dno = 0
     try: dno = distros.match(distro)
     except IOError as e: echo e.msg; quit(1)
     if v: stderr.write "Distro[", dno+1, "]: ", distros[dno][0], '\n'
     let (nm,dist) = distros[dno]; let (pdf, cdf, qtl, gen, support, modes)=dist
     for i in 1..nSamp: echo gen()
-    if x != 0.875:      # All Ds != 0 @0.125; Whole domain test is out of scope
+    if x != Inf:        # User gave some `x` at which to test this PDist
       let h = 5e-5      # for numerical derivative of CDF
       let p = pdf(x)    # Below tests ok, but narrower range for e.g. Matterhorn
       if p > 0f: #for D in {1..35};{for X in {0..20};dists -d$D -x$[(X-10)*0.1]}
