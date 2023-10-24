@@ -181,10 +181,18 @@ let distros* = {"U01":dU, "Exp": dExp,  #TODO Check supports&modes; Maybe plot?
   "cosine": PD(if x < -o: z elif x <= o: PI/p4*cos(PI*pH*x)     else: z,
                if x < -o: z elif x <= o: pH*(sin(PI*pH*x) + o)  else: o,
                if p < z: -o elif p <= o: - p2/PI*arcsin(o-p2*p) else: o,
-               @[-o, o], @[z])
+               @[-o, o], @[z]),
+  "notch": PD(if x < -o: z elif x < o: abs(x) else: z,
+      if x < -o: z elif x < z : pH - pH*x^2   elif x < o: pH + pH*x^2  else: o,
+      if p < z : z elif p < pH: -sqrt(1-p2*p) elif p < o: sqrt(p2*p-o) else: o,
+  @[-o, o], @[z]),                      # 1 - dTri [-1,1]
+  "parabola": PD(if x <= -o:z elif x<o: T(3)*pH*x*x else: z,
+                 if x <= -o:z elif x<o: pH + pH*x^3 else: o,
+                 if p<z: -o elif p<o: sgn(p2*p-o).T*pow(abs(p2*p-o),o3) else: o,
+                 @[-o,o], @[z])
 } ## A collection of distros for density estimation like R's `benchden` ordered
   ## like Berlinet,Devroye1994. Davies09 & Rozenholc09 both add more multimodal
-  ## (some included here, others too poorly described).  Also, some KDE kernels.
+  ## (some included here, others too poorly described).  Also, KDE&tail kernels.
 # Davies09 has no non-plot defs of: Outlier, StronglySkewed, Trimodal, ExpMix,
 # 8BinHisto, DiscreteComb, 24Normal. 8Bin looks ~irregular histo of Old Faithful
 # data. Trimodal ~ Avg(Bimodal, N(0,1)) w/SOME ratio. DiscreteComb ~ SmoothComb,
@@ -228,8 +236,8 @@ when isMainModule:      # A trivial command line driver mostly for testing.
     for i in 1..nSamp: echo gen()
     if x != Inf:        # User gave some `x` at which to test this PDist
       let h = 5e-5      # for numerical derivative of CDF
-      let p = pdf(x)    # Below tests ok, but narrower range for e.g. Matterhorn
-      if p > 0f: #for D in {1..35};{for X in {0..20};dists -d$D -x$[(X-10)*0.1]}
+      let p = pdf(x)    # This tests ok (except 24 27): for D in {1..37}; {
+      if p > 0f:        #   for X in {0..400}; dists -d$D -x$[(X-200)*0.01] }
         let c = cdf(x); let q = qtl(c)
         let dc = (cdf(x + h) - c)/h
         if C(p/dc, 1, 1e-4): echo nm," dCdf!=pdf; x: ",x," pd: ",p," dc: ",dc
