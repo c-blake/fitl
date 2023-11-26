@@ -154,9 +154,10 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
   var mV: (F, F)
   if ({gofD,gofW2,gofA2,gofV,gofU2}*gof).len>0: # *some* EDF-based residual test
     mV = r.mvars; r.u01ize mV                   # mean-vars => PITz just once
-  proc fmtGf(nm: string; sP: (F, F); sDig,pDig: int): string =
-    result.add nm;result.add ": "; result.add formatFloat(sP[0], precision=sDig)
-    result.add "  "; result.add formatFloat(sP[1], precision=pDig)
+  proc fmtGf(nm: string; sP: (F, F); sDig, pDig: int): string =
+    result.add nm; result.add "(st,pr): "
+    result.add formatFloat(sP[0], precision=sDig); result.add "  "
+    result.add formatFloat(sP[1], precision=pDig)
     if sP[1] < 0.01: result.add '*'             # Q: take thresh as a param?
   if gofD  in gof: echo fmtGf("KSgaussRes" , r.gofTest(mV, gfD ), 4, 3)
   if gofW2 in gof: echo fmtGf("CvMgaussRes", r.gofTest(mV, gfW2), 4, 3)
