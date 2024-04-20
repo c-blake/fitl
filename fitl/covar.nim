@@ -21,9 +21,9 @@ proc corrAuto*[F](x: openArray[F], lag=1): F =
   if lag < x.len: corr(x, x[lag..^1]) else: F(0)
 
 proc covMat*[F](v: var openArray[F]; x: openArray[F]; n, m: int) =
-  ##Save in v usual symmetric m*m Covariance matrix for n*m input matrix x where
-  ##x[i+n*j] is the j-th column of the i-th row.  I.e., samples is the faster
-  ##moving index, not variables aka column-major.
+  ## Save in `v` usual symmetric m*m Covariance matrix for n*m input matrix `x`
+  ## where `x[i+n*j]` is the j-th column of the i-th row.  Aka, samples is the
+  ## faster moving index, not variables; Aka column-major.
   var ni = if n > 1: 1.0 / F(n-1) else: 1.0
   var xm = newSeq[F](m) # means
   for j in 0 ..< m: xm[j] = mean(x[n*j].unsafeAddr, n)
