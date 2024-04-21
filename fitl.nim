@@ -1,6 +1,6 @@
 import std/[strformat, math, random, strutils, algorithm],
        cligen, cligen/[osUt, mslice, strUt],
-       spfun/studentT, fitl/[basicLA, covar, linfit, gof, qtl]
+       fitl/[basicLA, covar, linfit, gof, qtl]
 when not declared(File): import std/[syncio, formatfloat]
 type
   Gof* = enum gofR2="r2", gofXsq="xsq", gofPar="param", gofV="vKuiper",
@@ -108,8 +108,8 @@ proc fmtPar[F](leading: string; bs, v, bT: seq[F]): string =
   result.setLen result.len - 1
 
 proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
-           resids="", acf=0, boot=0, gof: set[Gof]={}, cov: set[Cov]={}, log="",
-           trim=0f32, its=0) =
+           resids="", acf=0, Corr=rank, altH=form, boot=0,
+           gof: set[Gof]={}, cov: set[Cov]={}, log="", trim=0f32, its=0) =
   ## Linear least squares parameter estimator for ASCII numbers in `file`.
   ## Default output is an awk/gnuplot-like formula w/best fit coefs to make ys
   ## from xs.  Options control extra output.  The input format is just:
@@ -146,7 +146,7 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
   echo fmtModel(cols, ixX, M, b, v, o, s)       # emit the model
   if resF != nil: (for i in 0..<n: resF.write &"{r[i]:.11g}\n")
   for lag in 1..acf:                            # Maybe emit resid AutoCorrFunc
-    let ac = corrAuto(r, lag); let cP = F(1) - corrP(ac, n - lag)
+    let (ac, cP) = corrAuto(r, lag, boot, Corr, altH)
     echo &"ResidAutoCorr-Lag-{lag}: {ac:.5f}\t{cP:.5f}"
   if covEst in cov: echo fmtCov("estimated",v,m,covNorm in cov, covLab in cov)
   if gofR2  in gof: echo &"r-squared: {F(1) - ssR/(ssY*s[0]):.6g}"
@@ -183,24 +183,26 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
   (if resF != nil: resF.close); (if logF != nil: logF.close)
   if iFl != stdin: iFl.close # stdin must have seen EOF; So close not so wrong.
 
-when isMainModule: dispatch fitl, help = {
-  "cols"  : "1-origin-yCol xCol.. 0=>all 1s; *[cs]=>Centr/Std",
+when isMainModule: dispatch fitl, short={"altH": 'A'}, help={
+  "cols"  : "1-origin-yCol xCol.. 0=>all 1s; ?[cs]=>Centr/Std",
   "file"  : "input file; \"-\" => stdin",
-  "delim" : "`initSep` input delimiter; w=repeated whitespc",
+  "delim" : "`initSep` input delim; w=repeated whitespace",
   "wtCol" : "1-origin sigma aka inverse weight column",
-  "sv"    : "regularize: >0 SV clip <0 -manualRidge ==0 CV",
+  "sv"    : "regularize: >0 SVclip <0 -manualRidge ==0 CV",
   "xv"    : "auto-ridge cross-validation score: GCV LOO",
   "resids": "log residuals to this pathname",
   "acf"   : "emit resid serial AutoCorrFunc up to this lag",
-  "boot"  : "num bootstraps for Cov(b); 0=>estimated Cov(b)",
+  "Corr"  : "correlation coefficient to use: linear rank",
+  "altH"  : "alt hyp for CC pVal: - + twoSide form(ula)",
+  "boot"  : "num resamples for Cov(b); 0=>estimated Cov(b)",
   "gof" : """emit goodness of fit diagnostics:
-  r2: R^2; xsq: Chi-Square {aka SSR},df,pvalue
+  r2: R^2; xsq: Chi-Square{aka SSR},df,pValue
   param: parameter significance breakdown
   GoF tests residuals are Gaussian:
     kolmogorovSmirnovD cramerVonMisesW2
     andersonDarlingA2 vKuiper watsonU2""",
-  "cov"   : "emit Cov(b) with flags: est, norm, label, boot",
-  "log"   : "log to this path (trimming,model selection,..)",
-  "trim": """trim pnts>="Nqtl(x/(2n)) sdevs" from regr surf
+  "cov"   : "emit Cov(b) with flags: est norm label boot",
+  "log"   : "path to log (trimming, model selection..) to",
+  "trim": """trim pnts>="Nqtl(x/(2n)) sdevs" from reg surf
  [x=num pts expected if resids REALLY Normal]""",
-  "its"   : "max trimming itrs; < 0 => until fixed point." }
+  "its"   : "max trimming itrs; < 0 => until fixed point."}

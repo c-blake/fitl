@@ -20,6 +20,13 @@ proc corr*[F](x, y: openArray[F], yO=0): F =
 proc corrAuto*[F](x: openArray[F], lag=1): F =
   if lag < x.len: corr(x, x, lag) else: F(0)
 
+from spfun/studentT import ccPv, Corr, AltH; export Corr, AltH
+template pua(T: typedesc): untyped = ptr UncheckedArray[T]
+proc corrAuto*[F](x: openArray[F], lag=1, B=999, cc=rank, altH=form): (F, F) =
+  let hi = x.len - lag - 1
+  ccPv(toOpenArray(cast[pua F](x[ 0 ].unsafeAddr), 0, hi),
+       toOpenArray(cast[pua F](x[lag].unsafeAddr), 0, hi), B, cc, altH)
+
 proc covMat*[F](v: var openArray[F]; x: openArray[F]; n, m: int) =
   ## Save in `v` usual symmetric m*m Covariance matrix for n*m input matrix `x`
   ## where `x[i+n*j]` is the j-th column of the i-th row.  Aka, samples is the
