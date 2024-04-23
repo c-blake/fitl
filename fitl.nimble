@@ -1,5 +1,5 @@
 # Package
-version     = "0.5.0"
+version     = "0.5.1"
 author      = "Charles Blake"
 description = "Self-contained fit of linear models with regression diagnostics"
 license     = "MIT/ISC"
@@ -7,7 +7,7 @@ license     = "MIT/ISC"
 # Deps
 requires    "nim >= 1.6.0"
 requires    "cligen >= 1.7.1"
-requires    "spfun >= 0.5.0"
+requires    "spfun >= 0.5.1"
 skipDirs    = @["fitl"]
 installExt  = @[".nim"]
 bin         = @["fitl", "fitl/qtl", "fitl/gof"]
