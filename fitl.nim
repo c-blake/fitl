@@ -146,8 +146,8 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
   echo fmtModel(cols, ixX, M, b, v, o, s)       # emit the model
   if resF != nil: (for i in 0..<n: resF.write &"{r[i]:.11g}\n")
   for lag in 1..acf:                            # Maybe emit resid AutoCorrFunc
-    let (ac, cP) = corrAuto(r, lag, boot, Corr, altH)
-    echo &"ResidAutoCorr-Lag-{lag}: {ac:.5f}\t{cP:.5f}"
+    let (ac, pLo, pHi) = corrAuto(r, lag, boot, Corr, altH)
+    echo &"ResidAutoCorr-Lag-{lag}: {ac:.5f}\t{0.5*(pLo+pHi):.5f}"
   if covEst in cov: echo fmtCov("estimated",v,m,covNorm in cov, covLab in cov)
   if gofR2  in gof: echo &"r-squared: {F(1) - ssR/(ssY*s[0]):.6g}"
   if gofXsq in gof: echo &"Chi-sqr: {ssR:.4g} nu: {df:.4g} p: {Q(df, ssR):.5g}"

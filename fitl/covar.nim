@@ -22,10 +22,10 @@ proc corrAuto*[F](x: openArray[F], lag=1): F =
 
 from spfun/studentT import ccPv, Corr, AltH; export Corr, AltH
 template pua(T: typedesc): untyped = ptr UncheckedArray[T]
-proc corrAuto*[F](x: openArray[F], lag=1, B=999, cc=rank, altH=form): (F, F) =
+proc corrAuto*[F](x: openArray[F], lag=1, B=9, cc=rank, altH=form): (F, F, F) =
   let hi = x.len - lag - 1
   ccPv(toOpenArray(cast[pua F](x[ 0 ].unsafeAddr), 0, hi),
-       toOpenArray(cast[pua F](x[lag].unsafeAddr), 0, hi), B, cc, altH)
+       toOpenArray(cast[pua F](x[lag].unsafeAddr), 0, hi), B,0.99,0.05, cc,altH)
 
 proc covMat*[F](v: var openArray[F]; x: openArray[F]; n, m: int) =
   ## Save in `v` usual symmetric m*m Covariance matrix for n*m input matrix `x`
