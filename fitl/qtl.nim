@@ -34,16 +34,23 @@ proc quantile*[T: SomeFloat, U: SomeFloat](x: openArray[T], q: U): U =
 
 when isMainModule:
   when not declared(stdin): import std/[syncio, formatfloat]
-  import strutils, algorithm, cligen
+  import std/[strutils, algorithm, random], cligen
+  when defined danger: randomize()
   proc qtl(ps: seq[float]) =
     ## Read one column of numbers on stdin; Emit Parzen-interpolated quantiles
     ## for probabilities `ps`. Eg.: *echo 1 1 2 4|tr ' ' '\\n'|qtl 0 .5 1*
-    ## writes *1.0 1.66.. 4.0*
+    ## writes *1.0 1.66.. 4.0*.
+    ##
+    ## If `ps[0]<0` & only `p` (eg. ``-210``) instead emit -THIS many re-samples
+    ## to stdout.  Eg. `split(1)` can then turn into 10 files for 21 data.
     var x: seq[float]
     for line in stdin.lines: x.add parseFloat(line.strip)
     x.sort
-    for i, p in ps:
-      if i > 0: stdout.write " "      
-      stdout.write x.quantile(p)
-    stdout.write '\n'
+    if ps.len == 1 and ps[0] < 0:
+      for i in 1 .. -int(ps[0]): echo x.quantile(rand(1.0))
+    else:
+      for i, p in ps:
+        if i > 0: stdout.write " "      
+        stdout.write x.quantile(p)
+      stdout.write '\n'
   dispatch qtl
