@@ -28,13 +28,13 @@ set linetype 3 lc rgb "black"; set linetype 4 lc rgb "black"
 set linetype 5 lc rgb "black"; set linetype 6 lc rgb "black"
 set linetype 7 lc rgb "black"; set linetype 8 lc rgb "black"
 set linetype cycle 8                            # cycle *must be* >= 8
-plot"""
+plot """
   for i, x in xs:
     let opath = &"{oput}{i:03}"
     let o = open(opath, fmWrite)
     for f in x: o.write f, "\n"
     o.close
-    if gp != nil: gp.write (if i==0: " " else: " ,"), &"'{opath}' u 1:0"
+    if gp != nil: gp.write (if i==0: "" else: ",\\\n"), &"'{opath}' u 1:0"
   if gp != nil: gp.close
 
 when isMainModule:
