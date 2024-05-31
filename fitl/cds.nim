@@ -25,7 +25,7 @@ proc cdswarm*(iput="", oput="rs", m=20, gplot="", ci=0.95) =
   let tagL = &"{0.5 - 0.5*ci:.03f}"
   let tagH = &"{0.5 + 0.5*ci:.03f}"
   let l = open(&"{oput}{tagL}" , fmWrite)
-  let h = open(&"{oput}{tagL}" , fmWrite)
+  let h = open(&"{oput}{tagH}" , fmWrite)
   for j, f in x:
     e.write f, "\n"
     let (lo, hi) = initBinomP(j, n).est(ci)     #XXX Check alignment & maybe
@@ -52,8 +52,8 @@ plot """
       g.write (if i==0: "" else: ",\\\n     "), &"'{opath}' u 1:($0/{n}) ls 4"
   if g != nil:
     g.write &",\\\n     '{oput}EDF' u 1:($0/{n}) title 'EDF' ls 1"
-    g.write &",\\\n     '{oput}Lo'  title 'EDF{tagL}' ls 2"
-    g.write &",\\\n     '{oput}Hi'  title 'EDF{tagH}' ls 3"
+    g.write &",\\\n     '{oput}{tagL}' title 'EDF{tagL}' ls 2"
+    g.write &",\\\n     '{oput}{tagH}' title 'EDF{tagH}' ls 3"
     g.write "\n"; g.close
 
 when isMainModule:
