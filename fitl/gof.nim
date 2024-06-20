@@ -128,7 +128,7 @@ proc gofTest*[float64](ps: seq[float64], mV=(0f64,1f64), g=gfA2, mods={gfEst},
   gofTestTmpl(float64, ps, mV, g, mods, m)
 
 when isMainModule:
-  import cligen, strformat
+  import std/strformat, cligen, fitl/[covar, ksamp], spfun/binom
   when not declared(File): import std/formatfloat
 
   proc `$`(xs: seq[float]): string =
@@ -138,7 +138,8 @@ when isMainModule:
   type Emit=enum eZ="z", ePITz="PITz", eStat="stat", eDist="dist", eProb="prob"
 
   proc gof(sample: seq[float], gofs: seq[GoFTest] = @[], adj: set[GoFMod]={},
-        emit={eStat}, m=5000, knownM=0.0, knownV=0.0, pval=0.05, ran=true): int=
+        emit={eStat}, m=5000, knownM=0.0, knownV=0.0, pval=0.05, cf=3,
+        ident=2..3, ran=true): int =
     ## Tests for a Gaussian shape with known|estimated parameters.  E.g.:
     ##  *gof -g,=,k,v,c,w,a -ep 15 16 17 18 19 19 20 20 21 22 22 23 23 23 24 27*
     ## If `prob` is in `emit` then exit status doubles as a boolean test for
@@ -149,11 +150,24 @@ when isMainModule:
     let adj  = if knownV == 0.0 and adj.len == 0: {gfEst} else: adj
     let gofs = if gofs.len == 0: @[ gfA2 ] else: gofs
     sample.zscore mV
+    var nSignificantDepartures = 0
+    for lag in 1..cf:                   # independent
+      let (ac, _, pHi) = sample.corrAuto(lag, 50, linear, twoSide)
+      if pHi < pval:
+        inc nSignificantDepartures;echo "signif linear autocorr@lag ",lag," : ",ac
+    var copy = sample                   # identically distributed
+    var ns: seq[int]
+    for j in 0..<ident.a - 1: ns.add copy.len div ident.a
+    ns.add copy.len - ns.sum
+    for trial in 1..ident.b:
+      copy.shuffle; let (_, midR) = adkSim(copy, ns, m=1000)
+      let (_, pHi) = initBinomP(midR, 1000).est(1 - pval)
+      if pHi < pval:
+        inc nSignificantDepartures; echo "significant non-identicality: ", pHi
     if eZ in emit: echo "zScores: ", sample
     sample.sort; sample.pitz
     if ePITz in emit: echo "PITz: ", sample
     var st: float; var cdf: seq[float]
-    var nSignificantDepartures = 0
     for g in gofs:
       if (emit*{eStat,eProb}).len != 0: st = sample.gofStat(mV, g, adj, true)
       if (emit*{eDist,eProb}).len != 0: cdf.gofDist(sample.len, mV, g, adj, m)
@@ -173,7 +187,9 @@ when isMainModule:
    "adj"   : "adjust GoF stat for: **estimates** finiteN",
    "emit"  : "emits: z, PITz, stat, dist, prob",
    "m"     : "number of n-samples to estimate CDF",
-   "knownM": "Gaussian of known *mean*",
-   "knownV": "Gaussian of known *var*; 0 => **estimates**",
+   "knownM": "known *mean* Gaussian; kV=0 => **estimate**",
+   "knownV": "known *var*  Gaussian; 0 => **estimate**",
    "pval"  : "exit status = number of `prob` < `pval`",
+   "cf"    : "test serial autoCorrFunc up to this lag",
+   "ident" : "test identically distributed w/`b` trials of `a`-way splits",
    "ran"   : "randomize() for sampling"}
