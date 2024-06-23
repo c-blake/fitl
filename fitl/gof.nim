@@ -127,6 +127,29 @@ proc gofTest*[float64](ps: seq[float64], mV=(0f64,1f64), g=gfA2, mods={gfEst},
   ## Do whole test (stat+prob) calculation from u01ize'd probabilities `ps`.
   gofTestTmpl(float64, ps, mV, g, mods, m)
 
+proc abs[F](x: seq[F]): seq[F] =
+  result.setLen x.len; for i,e in x:result[i] = e.abs
+proc ms[F](x: seq[F]): (F, F) =
+  var sx, sx2: F
+  for e in x: sx += e; sx2 += e*e
+  result[0] = sx/x.len.F
+  result[1] = 1.0/sqrt(sx2/x.len.F - result[0]^2)
+proc u[F](x: var seq[F]) =
+  let (m, s) = x.ms
+  for i,e in x: (x[i] -= m; x[i] *= s)
+proc dot[F](x, y: seq[F]): F = (for i,e in x: result += e*y[i])
+
+proc whiteNoise*[F](x: openArray[F], K=5): F =
+  ## pValue for W)hite N)oise test of arxiv.org/abs/2203.10405; Simultaneous
+  ## test for non-zero ACF (non-I) *OR* linear heteroscedasticity (non-ID).
+  var s = 0.0; let n = x.len.F
+  for k in 1..K:
+    var xk0 = x[0..^k]; var xk0a = xk0.abs; xk0.u; xk0a.u
+    var xk1 = x[k..^1]; var xk1a = xk1.abs; xk1.u; xk1a.u
+    s += (dot(xk0 , xk1)^2 + dot(xk0a, xk1a)^2 +
+          dot(xk0a, xk1)^2 + dot(xk0 , xk1a)^2)/(n - k.F)
+  χ²c(4.0*K.F, n*(n + 2.0)*s)           # χ² Survival Function
+
 when isMainModule:
   import std/strformat, cligen, fitl/[covar, ksamp], spfun/binom
   when not declared(File): import std/formatfloat
@@ -151,19 +174,17 @@ when isMainModule:
     let gofs = if gofs.len == 0: @[ gfA2 ] else: gofs
     sample.zscore mV
     var nSignificantDepartures = 0
-    for lag in 1..cf:                   # independent
-      let (ac, _, pHi) = sample.corrAuto(lag, 50, linear, twoSide)
-      if pHi < pval:
-        inc nSignificantDepartures;echo "signif linear autocorr@lag ",lag," : ",ac
-    var copy = sample                   # identically distributed
+    if (let wn = sample.whiteNoise; wn < pval): # Independ & Linearly homosced.
+      inc nSignificantDepartures;echo "significant LinearDepend/Heterosced: ",wn
+    var copy = sample                   # Check Homogeneity/Identical Distro
     var ns: seq[int]
     for j in 0..<ident.a - 1: ns.add copy.len div ident.a
     ns.add copy.len - ns.sum
     for trial in 1..ident.b:
       copy.shuffle; let (_, midR) = adkSim(copy, ns, m=1000)
       let (_, pHi) = initBinomP(midR, 1000).est(1 - pval)
-      if pHi < pval:
-        inc nSignificantDepartures; echo "significant non-identicality: ", pHi
+      if pHi < pval/ident.b:            # Bonferroni
+        inc nSignificantDepartures; echo "significant Non-Identicality: ", pHi
     if eZ in emit: echo "zScores: ", sample
     sample.sort; sample.pitz
     if ePITz in emit: echo "PITz: ", sample
