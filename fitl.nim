@@ -150,7 +150,7 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
     echo &"ResidAutoCorr-Lag-{lag}: {ac:.5f}\t{0.5*(pLo+pHi):.5f}"
   if covEst in cov: echo fmtCov("estimated",v,m,covNorm in cov, covLab in cov)
   if gofR2  in gof: echo &"r-squared: {F(1) - ssR/(ssY*s[0]):.6g}"
-  if gofXsq in gof: echo &"Chi-sqr: {ssR:.4g} nu: {df:.4g} p: {Q(df, ssR):.5g}"
+  if gofXsq in gof: echo &"χ²: {ssR:.4g} nu: {df:.4g} p: {χ²c(df, ssR):.5g}"
   var mV: (F, F)
   if ({gofD,gofW2,gofA2,gofV,gofU2}*gof).len>0: # *some* EDF-based residual test
     mV = r.mvars; r.u01ize mV                   # mean-vars => PITz just once

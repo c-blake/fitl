@@ -1,6 +1,6 @@
 ## Implement metrics from the book Goodness-of-fit Techniques, 1986 edited by
 ## Ralph B. D'Agostino and Michael A. Stephens (referred to now as ds86).
-import std/[math, random, algorithm], spfun/gauss, basicLA
+import std/[math, random, algorithm], spfun/[gauss, gamma], basicLA
 
 type              # Open Topology              Circular Topology
   GoFTest* = enum gfD  = "kolmogorovSmirnovD", gfV  = "vKuiper" , # L_infinity

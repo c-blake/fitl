@@ -1,5 +1,5 @@
 import std/[strformat, strutils, sequtils, algorithm, math],
-       spfun/[gauss, gamma], basicLA, svdx, min1d
+       spfun/[gauss, gamma], basicLA, svdx, min1d; export gamma
 when not declared(File): import std/syncio
 
 type CrVal* = enum xvGCV = "GCV", xvLOO = "LOO"
@@ -173,5 +173,3 @@ proc linFit*[F](X: var openArray[F]; n: var int; M: int; b,u,s,v, r,h, oX,sX:
           dec n
       if n == n0: break                 # No points trimmed => done
       if log != nil: log.write &"{n0-n} / {n0} > {t/rtReducedCsq} sds\n"
-
-proc Q*[F](df, ssR: F): F = F(1) - gammaI(df/F(2), ssR/F(2))
