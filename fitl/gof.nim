@@ -183,7 +183,7 @@ when isMainModule:
     for trial in 1..ident.b:
       copy.shuffle; let (_, midR) = adkSim(copy, ns, m=1000)
       let (_, pHi) = initBinomP(midR, 1000).est(1 - pval)
-      if pHi < pval/ident.b:            # Bonferroni
+      if pHi < pval/ident.b.float:      # Bonferroni
         inc nSignificantDepartures; echo "significant Non-Identicality: ", pHi
     if eZ in emit: echo "zScores: ", sample
     sample.sort; sample.pitz
