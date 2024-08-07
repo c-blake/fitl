@@ -1,7 +1,6 @@
 ## Implement metrics from the book Goodness-of-fit Techniques, 1986 edited by
 ## Ralph B. D'Agostino and Michael A. Stephens (referred to now as ds86).
-import std/[math, random, algorithm], spfun/[gauss, gamma], basicLA
-
+import std/[math,random,algorithm,sugar],spfun/[gauss,gamma,binom],basicLA,ksamp
 type              # Open Topology              Circular Topology
   GoFTest* = enum gfD  = "kolmogorovSmirnovD", gfV  = "vKuiper" , # L_infinity
                   gfW2 = "cramerVonMisesW2"  , gfU2 = "watsonU2", # L2 norm
@@ -148,10 +147,24 @@ proc whiteNoise*[F](x: openArray[F], K=5): F =
     var xk1 = x[k..^1]; var xk1a = xk1.abs; xk1.u; xk1a.u
     s += (dot(xk0 , xk1)^2 + dot(xk0a, xk1a)^2 +
           dot(xk0a, xk1)^2 + dot(xk0 , xk1a)^2)/(n - k.F)
-  χ²c(4.0*K.F, n*(n + 2.0)*s)           # χ² Survival Function
+  χ²c(4.0*K.F, n*(n + 2.0)*s)           # χ² Survival Function/Complementary F()
+
+proc identDist*[F](x: openArray[F], alpha=0.05, ident=2..3): F =
+  ## Return first failed pValue for multiple hypothesis test of ident.b shuffles
+  ## of 1/ident.a fractions being all from an identical sampling distribution.
+  var x = collect(for e in x: e)        # Check Homogeneity/Identical Distro
+  var ns: seq[int]
+  for j in 0..<ident.a - 1: ns.add x.len div ident.a
+  ns.add x.len - ns.sum
+  for trial in 1..ident.b:
+    x.shuffle; let (_, midR) = adkSim(x, ns, m=1000)
+    let (_, pHi) = initBinomP(midR, 1000).est(1 - alpha)
+    if pHi < alpha/ident.b.float:       # Bonferroni
+      return pHi                        # No need to keep trying
+  1.0
 
 when isMainModule:
-  import std/strformat, cligen, fitl/[covar, ksamp], spfun/binom
+  import std/strformat, cligen, fitl/covar
   when not declared(File): import std/formatfloat
 
   proc `$`(xs: seq[float]): string =
@@ -176,15 +189,8 @@ when isMainModule:
     var nSignificantDepartures = 0
     if (let wn = sample.whiteNoise; wn < pval): # Independ & Linearly homosced.
       inc nSignificantDepartures;echo "significant LinearDepend/Heterosced: ",wn
-    var copy = sample                   # Check Homogeneity/Identical Distro
-    var ns: seq[int]
-    for j in 0..<ident.a - 1: ns.add copy.len div ident.a
-    ns.add copy.len - ns.sum
-    for trial in 1..ident.b:
-      copy.shuffle; let (_, midR) = adkSim(copy, ns, m=1000)
-      let (_, pHi) = initBinomP(midR, 1000).est(1 - pval)
-      if pHi < pval/ident.b.float:      # Bonferroni
-        inc nSignificantDepartures; echo "significant Non-Identicality: ", pHi
+    if (let pHi = sample.identDist(pval, ident); pHi < pval/ident.b.float):
+      inc nSignificantDepartures; echo "significant Non-Identicality: ",pHi
     if eZ in emit: echo "zScores: ", sample
     sample.sort; sample.pitz
     if ePITz in emit: echo "PITz: ", sample
