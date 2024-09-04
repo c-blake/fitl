@@ -1,5 +1,5 @@
 ## Module defines a common framework for continuous probability distributions.
-when not declared(stderr): import std/[syncio, formatfloat]
+when not declared(stderr): import std/syncio
 import std/[math, algorithm, random, critbits, strutils], spfun/[gauss, cauchy]
 type
   T = float64 # Things may become generic over this; T to not confuse with F(x)
@@ -224,7 +224,7 @@ proc match*(ds: openArray[(string, CDist)], pfx: string): int =
   else: raise newException(IOError, ("No prefix match for \"$1\"" % [pfx]))
 
 when isMainModule:      # A trivial command line driver mostly for testing.
-  import cligen; when defined(release): randomize()
+  import cligen, std/formatFloat; when defined(release): randomize()
   template C(a,b,th):untyped = a.abs>th and abs(a-b)>th and abs(a/b-1)>sqrt(th)
   type Plot = enum pNone="none", pPDF="pdf", pCDF="cdf", pQtl="qtl"
   proc dists(distro="U01", nSamp=0, x=Inf, plot=pNone, mode=false, v=false) =
