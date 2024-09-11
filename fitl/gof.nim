@@ -174,7 +174,7 @@ when isMainModule:
   type Emit=enum eZ="z", ePITz="PITz", eStat="stat", eDist="dist", eProb="prob"
 
   proc gof(sample: seq[float], gofs: seq[GoFTest] = @[], adj: set[GoFMod]={},
-        emit={eStat}, m=5000, knownM=0.0, knownV=0.0, pval=0.05, cf=3,
+        emit={eStat}, s=5000, knownM=0.0, knownV=0.0, pval=0.05, cf=5, mi=5,
         ident=2..3, ran=true): int =
     ## Tests for a Gaussian shape with known|estimated parameters.  E.g.:
     ##  *gof -g,=,k,v,c,w,a -ep 15 16 17 18 19 19 20 20 21 22 22 23 23 23 24 27*
@@ -197,7 +197,7 @@ when isMainModule:
     var st: float; var cdf: seq[float]
     for g in gofs:
       if (emit*{eStat,eProb}).len != 0: st = sample.gofStat(mV, g, adj, true)
-      if (emit*{eDist,eProb}).len != 0: cdf.gofDist(sample.len, mV, g, adj, m)
+      if (emit*{eDist,eProb}).len != 0: cdf.gofDist(sample.len, mV, g, adj, s)
       let gName = if adj.len == 0: gofName[g] else: "m" & gofName[g]
       if eStat in emit: echo &"{gName}: {st:.4g}"
       if eProb in emit:
@@ -213,10 +213,11 @@ when isMainModule:
      "kolmogorovSmirnovD cramerVonMisesW2 `andersonDarlingA2` vKuiper watsonU2",
    "adj"   : "adjust GoF stat for: **estimates** finiteN",
    "emit"  : "emits: z, PITz, stat, dist, prob",
-   "m"     : "number of n-samples to estimate CDF",
+   "s"     : "number of n-samples to estimate CDF",
    "knownM": "known *mean* Gaussian; kV=0 => **estimate**",
    "knownV": "known *var*  Gaussian; 0 => **estimate**",
    "pval"  : "exit status = number of `prob` < `pval`",
    "cf"    : "test serial autoCorrFunc up to this lag",
+   "mi"    : "test serial auto-Mutual Info up to this lag",
    "ident" : "test identically distributed w/`b` trials of `a`-way splits",
    "ran"   : "randomize() for sampling"}
