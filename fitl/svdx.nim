@@ -1,5 +1,5 @@
 ## Not so rotten self-contained SVD in 42 lines of non-comment/blank code
-from math import sqrt, copySign; from basicLA import dot, sum0
+from std/math import sqrt, copySign; from basicLA import dot, sum0
 
 proc jacobi[F](a, b, c: F): (F, F) {.inline.} =
   if abs(2.0 * c) != 0.0:               # return (cos,sin)(Jacobi Angle)
@@ -92,7 +92,6 @@ when isMainModule:
   var v = newSeq[float32](9)
   discard svdx(u, s, v, 4, 3)
   stdout.write "u cols Lv:\n",u.fmt(4,3),"s: ",s,"\n","v cols Rv:\n",v.fmt(3,3)
-  from basicLA import sum0
   var e = 0f32      # U.S.Vt = sum_kl U_ik*S_kl*Vt_lj = U_ik*D_kl*s_k*Vt_jl
   for i in 0..<4:   #        = sum_k s_k*U_ik*V_jk
     for j in 0..<3: e=max(e, abs(x[i+4*j] - sum0(k,3, s[k]*u[i+4*k]*v[j+3*k])))
