@@ -10,4 +10,4 @@ requires    "cligen >= 1.7.4"
 requires    "spfun >= 0.7.2"
 skipDirs    = @["fitl"]
 installExt  = @[".nim"]
-bin         = @["fitl", "fitl/qtl", "fitl/gof"]
+bin         = @["fitl", "fitl/qtl", "fitl/gof", "fitl/dists", "fitl/estMI"]
