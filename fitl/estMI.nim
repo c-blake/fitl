@@ -250,7 +250,8 @@ when isMainModule:
     let pnts = load(if file.len > 0: file.open else: stdin, noise)
     let (val,err) = pnts.miErr(xDim, yDim, k, score); echo fmtUncertain(val,err)
 
-  dispatch estMI, help={"k": "k-th out nearest neighbor",
+  include cligen/mergeCfgEnv; dispatch estMI, help={
+    "k": "k-th out nearest neighbor",
     "file": "filename; \"\" => stdin; Fmt: xDim+yDim rows",
     "xDim": "x vector dimension", "yDim": "y vector dimension (0=>same as x)",
     "noise": "U01-scale noise to add to each coord", "score": "t=normal score",

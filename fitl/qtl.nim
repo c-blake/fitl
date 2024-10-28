@@ -53,4 +53,4 @@ when isMainModule:
         if i > 0: stdout.write " "      
         stdout.write x.quantile(p)
       stdout.write '\n'
-  dispatch qtl
+  include cligen/mergeCfgEnv; dispatch qtl

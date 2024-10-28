@@ -251,4 +251,4 @@ when isMainModule:      # A trivial command line driver mostly for testing.
     elif plot == pQtl:
       for i in 0..1024: (let x = i.float*0.0009765625; echo x," ",qtl(x))
     if mode: (for m in modes: echo m)
-  dispatch dists
+  include cligen/mergeCfgEnv; dispatch dists

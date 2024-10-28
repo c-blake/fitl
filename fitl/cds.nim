@@ -59,7 +59,7 @@ plot """
 when isMainModule:
   when not declared(stdin): import std/[syncio, formatfloat]
   when defined danger: randomize()
-  import cligen; dispatch cdswarm, help={
+  import cligen; include cligen/mergeCfgEnv; dispatch cdswarm, help={
     "iput" : "input path or \"\" for stdin",
     "oput" : "output path prefix; outs Get numbered",
     "m"    : "number of resamples; e.g. for plots",

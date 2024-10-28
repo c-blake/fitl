@@ -183,7 +183,7 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
   (if resF != nil: resF.close); (if logF != nil: logF.close)
   if iFl != stdin: iFl.close # stdin must have seen EOF; So close not so wrong.
 
-when isMainModule: dispatch fitl, short={"altH": 'A'}, help={
+when isMainModule: include cligen/mergeCfgEnv; dispatch fitl, help={
   "cols"  : "1-origin-yCol xCol.. 0=>all 1s; ?[cs]=>Centr/Std",
   "file"  : "input file; \"-\" => stdin",
   "delim" : "`initSep` input delim; w=repeated whitespace",
@@ -205,4 +205,4 @@ when isMainModule: dispatch fitl, short={"altH": 'A'}, help={
   "log"   : "path to log (trimming, model selection..) to",
   "trim": """trim pnts>="Nqtl(x/(2n)) sdevs" from reg surf
  [x=num pts expected if resids REALLY Normal]""",
-  "its"   : "max trimming itrs; < 0 => until fixed point."}
+  "its"   : "max trimming itrs; < 0 => until fixed point."}, short={"altH": 'A'}

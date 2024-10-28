@@ -207,7 +207,7 @@ when isMainModule:
       if eDist in emit: echo &"cdf({gName}): ", cdf
     nSignificantDepartures
 
-  dispatch gof, positional="sample", short={"knownM":'M',"knownV":'V',}, help={
+  include cligen/mergeCfgEnv; dispatch gof, positional="sample", help={
    "sample": "x_1 x_2 .. x_n data sample",
    "gofs":
      "kolmogorovSmirnovD cramerVonMisesW2 `andersonDarlingA2` vKuiper watsonU2",
@@ -220,4 +220,4 @@ when isMainModule:
    "cf"    : "test serial autoCorrFunc up to this lag",
    "mi"    : "test serial auto-Mutual Info up to this lag",
    "ident" : "test identically distributed w/`b` trials of `a`-way splits",
-   "ran"   : "randomize() for sampling"}
+   "ran"   : "randomize() for sampling"}, short={"knownM":'M',"knownV":'V'}
