@@ -229,7 +229,7 @@ proc miErr*(pnts: seq[F]; dimx, dimy, k: int; score=false, err=4): (F, F) =
   result[1] = sqrt(varSum/niSum.F)  #..Their Matlab _stddev code also drops it.
 
 when isMainModule:
-  import std/[syncio, strutils, formatFloat, enumerate], cligen, cligen/strUt
+  import std/[syncio, strutils, enumerate], cligen, cligen/strUt
   when defined(danger): randomize()
 
   proc load(f: File, noise: F): seq[F] =
