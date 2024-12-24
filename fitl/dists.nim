@@ -1,4 +1,5 @@
 ## Module defines a common framework for continuous probability distributions.
+{.warning[Uninit]:off, warning[ProveInit]:off.} # Should be verbosity:2 not 1
 when not declared(stderr): import std/syncio
 import std/[math, algorithm, random, critbits, strutils], spfun/[gauss, cauchy]
 type
@@ -8,7 +9,6 @@ type
     gen    : proc(): T,           ## Sample pseudo-random deviates of this dist
     support: seq[T],              ## where non-zero (for plots, num.integ., etc.
     modes  : seq[T]]              ## Locations of modes (local maxima)
-
 template newton(p, cdf, pdf, support, x0, fTol) {.dirty.}= # [pc]df must use `x`
   var x = x0          # Newton's method should be an ok inverter/solver here.
   for it in 1..50:    # Quadratically cvgent. If 50 fails,likely nothing works

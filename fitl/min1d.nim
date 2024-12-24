@@ -1,5 +1,5 @@
+{.warning[Uninit]:off, warning[ProveInit]:off.} # Should be verbosity:2 not 1
 import math # Module with algos to find minima of 1-D scalar functions.
-
 type ScalarF*[F] = proc(x: F): F
   ## Nim requires casting proc types too much.
 

@@ -1,6 +1,6 @@
+{.warning[Uninit]:off, warning[ProveInit]:off.} # Should be verbosity:2 not 1
 import basicLA; from std/math import sqrt
 {.passc: "-O3 -ffast-math -march=native -mtune=native".}
-
 proc mean[F](x: ptr F; n: int): F = sum(x, n) / F(n)
 
 proc corr[F](x, y: openArray[F]; xm, ym: F; n: int; yO=0): F =

@@ -1,4 +1,5 @@
 ## Not so rotten self-contained SVD in 42 lines of non-comment/blank code
+{.warning[Uninit]:off, warning[ProveInit]:off.} # Should be verbosity:2 not 1
 from std/math import sqrt, copySign; from basicLA import dot, sum0
 
 proc jacobi[F](a, b, c: F): (F, F) {.inline.} =

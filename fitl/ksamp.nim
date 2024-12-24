@@ -1,9 +1,9 @@
 ## k-sample statistical homogeneity test based on Fritz Scholz' R package.
+{.warning[Uninit]:off, warning[ProveInit]:off.} # Should be verbosity:2 not 1
 import std/[math, random, algorithm]
 type F = float
 func count(dat: openArray[F], z: F): int = (for e in dat: (if e==z: inc result))
 func getSum(x: openArray[int], lim=0): int = (for i in 0..<lim: result += x[i])
-
 func dedup(a: var seq[F]) =
   var i = 0
   for j in 1 ..< a.len:

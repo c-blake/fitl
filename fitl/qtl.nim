@@ -1,3 +1,4 @@
+{.warning[Uninit]:off, warning[ProveInit]:off.} # Should be verbosity:2 not 1
 proc quantile*[T: SomeFloat, U: SomeFloat](x: openArray[T], q: U): U =
   ## Compute Parzen Qmid Quantile given sorted openArray[SomeFloat].  For more
   ## motivation of this definition, see Ma, Genton & Parzen 2011: "Asymptotic
