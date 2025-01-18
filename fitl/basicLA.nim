@@ -2,7 +2,7 @@
 ## they are about as fast (or sometimes a bit faster) than optimized libs. (A
 ## bit faster since they are more specific to dense/non-strided iterations.)
 {.passc: "-O3 -ffast-math -march=native -mtune=native".}
-{.warning[Uninit]:off, warning[ProveInit]:off.} # Should be verbosity:2 not 1
+
 proc sum*[F](x: ptr F; n: int): F =
   ## Sum of elements with accumulator in same arithmetic width as params.
   let x = cast[ptr UncheckedArray[F]](x)

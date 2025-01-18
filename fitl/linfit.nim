@@ -1,7 +1,7 @@
-{.warning[Uninit]:off, warning[ProveInit]:off.} # Should be verbosity:2 not 1
 import std/[strformat, strutils, sequtils, algorithm, math],
        spfun/[gauss, gamma], basicLA, svdx, min1d; export gamma
 when not declared(File): import std/syncio
+
 type CrVal* = enum xvGCV = "GCV", xvLOO = "LOO"
 
 proc colDel(x: pointer; n, m, J, sz: int) = # In-place column deletion

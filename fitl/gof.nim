@@ -1,6 +1,5 @@
 ## Implement metrics from the book Goodness-of-fit Techniques, 1986 edited by
 ## Ralph B. D'Agostino and Michael A. Stephens (referred to now as ds86).
-{.warning[Uninit]:off, warning[ProveInit]:off.} # Should be verbosity:2 not 1
 import std/[math,random,algorithm,sugar],spfun/[gauss,gamma,binom],basicLA,ksamp
 type              # Open Topology              Circular Topology
   GoFTest* = enum gfD  = "kolmogorovSmirnovD", gfV  = "vKuiper" , # L_infinity
@@ -8,6 +7,7 @@ type              # Open Topology              Circular Topology
                   gfA2 = "andersonDarlingA2"
 
   GoFMod* = enum gfFin = "finiteN", gfEst = "estimates"
+
 const gofName*: array[GoFTest, string] = [ "D", "V", "W^2", "U^2", "A^2" ]
 const noMod: set[GoFMod] = {}
 

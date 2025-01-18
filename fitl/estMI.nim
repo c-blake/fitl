@@ -1,10 +1,10 @@
-{.warning[Uninit]:off, warning[ProveInit]:off.} # Should be verbosity:2 not 1
 import std/[math, random, algorithm, stats], spfun/[gauss, digamma]
 type F = float32            # Can make [F] a common generic parameter someday
 # Common params: `x`: input; `n`: #pairs; `nB`: #boxes; `scl`: scale factor;
 # `eGinv`: box size; `c(1|2)`: 1st|2nd component for making 2-D grid; `box`:
 # each array elt is num of last point in box; `lis`: each array elt is num of
 # prev points in box|-1; `mxi`: cumulative n(pnts) in box; eFoo =~ epsilon_Foo
+
 func ssDup[T](n, d2, o: int, src: seq[seq[T]]): seq[seq[T]] = # seq[seq[]] dup
   result.setLen d2
   for d in 0 ..< d2:

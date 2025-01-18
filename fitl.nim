@@ -1,4 +1,3 @@
-{.warning[Uninit]:off, warning[ProveInit]:off.} # Should be verbosity:2 not 1
 import std/[strformat, math, random, strutils, algorithm],
        cligen, cligen/[osUt, mslice, strUt],
        fitl/[basicLA, covar, linfit, gof, qtl]
@@ -9,6 +8,7 @@ type
               gofW2="cramerVonMisesW2", gofA2="andersonDarlingA2"
   Cov* = enum covLab="label", covNorm="norm", covEst="est", covBoot="boot"
   F*   = float32
+
 proc colCpy(dst, src: pointer; nD, nS, m, sz: int) =  # To make bootstrap data
   let dD  = cast[uint](nD * sz)                       #..in a col-major world.
   let dS  = cast[uint](nS * sz)

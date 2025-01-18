@@ -1,8 +1,8 @@
-{.warning[Uninit]:off, warning[ProveInit]:off.} # Should be verbosity:2 not 1
 when not declared(stdin): import std/[syncio, formatfloat]
 import std/[strutils, strformat, algorithm, random]
 from fitl/qtl    import quantile
 from spfun/binom import initBinomP, est
+
 proc cds*(x: seq[float], m=50, sort=false): seq[seq[float]] =
   ## Use an *already sorted* `x` to make `m` Parzen Qmid re-samples, maybe sort.
   result.setLen m
