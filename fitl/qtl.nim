@@ -47,7 +47,7 @@ proc harrellDavis*[F:SomeFloat](w: var seq[F], n: int, q: F, err=1e-14) =
     w[i] = curr - last
     last = curr
 
-type Method = enum Parzen, HarrellDavis
+type Method* = enum Parzen, HarrellDavis
 
 proc quantile*[F:SomeFloat, U:SomeFloat](x: openArray[F], q: U, m=Parzen,
                                          w: ptr F=nil): U =
