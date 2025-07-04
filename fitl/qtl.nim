@@ -31,6 +31,17 @@ proc parzen*[F:SomeFloat, U:SomeFloat](x: openArray[F], q: U): U =
   let r = (qN - cL) / (cH - cL)
   return U((1.0 - r) * xL  +  r * xH)
 
+import std/algorithm                      # Should use adix/nsort
+proc hodgesLehmann*[F:SomeFloat, U:SomeFloat](x: openArray[F], q: U): U =
+  ##[ Return Generalized Hodges-Lehmann Estimator Parzen-quantile(pairwise
+  averages) of sorted openArray `x`, but extreme quantiles not recommended. ]##
+  let n = x.len; var k = 0
+  var pairAvs = newSeq[F](n*(n + 1)div 2)
+  for i in 0..<n:            # Self-inclusive pairing important
+    for j in 0..i: pairAvs[k] = 0.5*(x[i] + x[j]); inc k
+  sort pairAvs
+  parzen pairAvs, q
+
 import spfun/beta, fitl/basicLA
 proc harrellDavis*[F:SomeFloat](w: var seq[F], n: int, q: F, err=1e-14) =
   ##[ Set weights `w` on `n` order stats to estimate quantile `q`. Harrell-Davis
@@ -47,7 +58,7 @@ proc harrellDavis*[F:SomeFloat](w: var seq[F], n: int, q: F, err=1e-14) =
     w[i] = curr - last
     last = curr
 
-type Method* = enum Parzen, HarrellDavis
+type Method* = enum Parzen="parzen", HarrellDavis="d", HodgesLehmann="l"
 
 proc quantile*[F:SomeFloat, U:SomeFloat](x: openArray[F], q: U, m=Parzen,
                                          w: ptr F=nil): U =
@@ -59,10 +70,11 @@ proc quantile*[F:SomeFloat, U:SomeFloat](x: openArray[F], q: U, m=Parzen,
       dot x[0].addr, w[0].addr, x.len
     else:
       dot x[0].addr, w, x.len
+  of HodgesLehmann: hodgesLehmann x, q
 
 when isMainModule:
   when not declared(stdin): import std/[syncio, formatfloat]
-  import std/[strutils, algorithm, random], cligen
+  import std/[strutils, random], cligen
   when defined danger: randomize()
   proc qtl(`method`=Parzen, ps: seq[float]) =
     ## Read one column of numbers on stdin; Emit Parzen-interpolated quantiles
@@ -81,4 +93,5 @@ when isMainModule:
         if i > 0: stdout.write " "
         stdout.write x.quantile(p, `method`)
       stdout.write '\n'
-  include cligen/mergeCfgEnv;dispatch qtl,help={"method":"Parzen, HarrellDavis"}
+  include cligen/mergeCfgEnv; dispatch qtl, help={
+    "method": "parzen, d(HarrellDavis), l(HodgesLehmann)" }
