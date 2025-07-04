@@ -31,14 +31,19 @@ proc parzen*[F:SomeFloat, U:SomeFloat](x: openArray[F], q: U): U =
   let r = (qN - cL) / (cH - cL)
   return U((1.0 - r) * xL  +  r * xH)
 
+proc walshAverages*[F: SomeFloat](x: openArray[F]): seq[F] =
+  ##[ Walsh 1950: Note on a theorem due to Hoeffding; Ann.Math.Stat. 21(1) first
+  framed discussion of pairwise-including-self averages. ]##
+  let n = x.len; var k = 0
+  result.setLen n*(n + 1)div 2
+  for i in 0..<n:                         # Self-inclusive pairing important
+    for j in 0..i: result[k] = 0.5*(x[i] + x[j]); inc k
+
 import std/algorithm                      # Should use adix/nsort
 proc hodgesLehmann*[F:SomeFloat, U:SomeFloat](x: openArray[F], q: U): U =
   ##[ Return Generalized Hodges-Lehmann Estimator Parzen-quantile(pairwise
   averages) of sorted openArray `x`, but extreme quantiles not recommended. ]##
-  let n = x.len; var k = 0
-  var pairAvs = newSeq[F](n*(n + 1)div 2)
-  for i in 0..<n:            # Self-inclusive pairing important
-    for j in 0..i: pairAvs[k] = 0.5*(x[i] + x[j]); inc k
+  var pairAvs = walshAverages x
   sort pairAvs
   parzen pairAvs, q
 
@@ -58,7 +63,16 @@ proc harrellDavis*[F:SomeFloat](w: var seq[F], n: int, q: F, err=1e-14) =
     w[i] = curr - last
     last = curr
 
-type Method* = enum Parzen="parzen", HarrellDavis="d", HodgesLehmann="l"
+proc hDW*[F:SomeFloat, U:SomeFloat](x: openArray[F], q: U): U =
+  ##[ Return q-Generalized Hodges-Lehmann Estimator (pairwise averages) of
+  sorted openArray `x`, but with Harrell-Davis rather than Parzen quantiles. ]##
+  var pAs = walshAverages x
+  sort pAs
+  var w: seq[F]; harrellDavis w, pAs.len, q
+  dot pAs[0].addr, w[0].addr, pAs.len
+
+type Method* = enum Parzen="parzen", HarrellDavis="d", HodgesLehmann="l",
+                    HDW="b" # b for both
 
 proc quantile*[F:SomeFloat, U:SomeFloat](x: openArray[F], q: U, m=Parzen,
                                          w: ptr F=nil): U =
@@ -71,6 +85,7 @@ proc quantile*[F:SomeFloat, U:SomeFloat](x: openArray[F], q: U, m=Parzen,
     else:
       dot x[0].addr, w, x.len
   of HodgesLehmann: hodgesLehmann x, q
+  of HDW: hDW x, q
 
 when isMainModule:
   when not declared(stdin): import std/[syncio, formatfloat]
@@ -94,4 +109,7 @@ when isMainModule:
         stdout.write x.quantile(p, `method`)
       stdout.write '\n'
   include cligen/mergeCfgEnv; dispatch qtl, help={
-    "method": "parzen, d(HarrellDavis), l(HodgesLehmann)" }
+    "method": """ p)arzen
+ d(HarrellDavis)
+ l(ParzenQmid-HodgesLehmann)
+ b(both HD&HL, i.e. HD(Walsh)"""}
