@@ -75,7 +75,7 @@ type Method* = enum Parzen="parzen", HarrellDavis="d", HodgesLehmann="l",
                     HDW="b" # b for both
 
 proc quantile*[F:SomeFloat, U:SomeFloat](x: openArray[F], q: U, m=Parzen,
-                                         w: ptr F=nil): U =
+                                         cbα=0.05, w: ptr F=nil): U =
   case m
   of Parzen: parzen x, q
   of HarrellDavis:
@@ -90,26 +90,26 @@ proc quantile*[F:SomeFloat, U:SomeFloat](x: openArray[F], q: U, m=Parzen,
 when isMainModule:
   when not declared(stdin): import std/[syncio, formatfloat]
   import std/[strutils, random], cligen
-  when defined danger: randomize()
-  proc qtl(`method`=Parzen, ps: seq[float]) =
-    ## Read one column of numbers on stdin; Emit Parzen-interpolated quantiles
-    ## for probabilities `ps`. Eg.: *echo 1 1 2 4|tr ' ' '\\n'|qtl 0 .5 1*
-    ## writes *1.0 1.66.. 4.0*.
+  when defined release: randomize()
+  proc qtl(`method`=Parzen, cbα=0.05, ps: seq[float]) =
+    ## Read column of numbers on stdin; Emit various quantiles for probabilities
+    ## `ps`. Eg.: *echo 1 1 2 4|tr ' ' '\\n'|qtl 0 .5 1* writes *1.0 1.66 4.0*.
     ##
-    ## If `ps[0]<0` & only `p` (eg. ``-210``) instead emit -THIS many re-samples
-    ## to stdout.  Eg. `split(1)` can then turn into 10 files for 21 data.
+    ## If one `p`,integral>=2 (eg. ``210``), instead emit THAT many re-samples
+    ## to stdout.  Eg. `|qtl 210|split -nl/21` creates 10 files each w/21 data.
     var x: seq[float]
     for line in stdin.lines: x.add parseFloat(line.strip)
     x.sort
-    if ps.len == 1 and ps[0] < 0:
-      for i in 1 .. -int(ps[0]): echo x.quantile(rand(1.0))
+    if ps.len == 1 and ps[0] == ps[0].int.float and ps[0] >= 2:
+      for i in 1 .. int(ps[0]): echo x.quantile(rand(1.0))
     else:
       for i, p in ps:
         if i > 0: stdout.write " "
-        stdout.write x.quantile(p, `method`)
+        stdout.write x.quantile(p, `method`, cbα)
       stdout.write '\n'
   include cligen/mergeCfgEnv; dispatch qtl, help={
     "method": """ p)arzen
  d(HarrellDavis)
  l(ParzenQmid-HodgesLehmann)
- b(both HD&HL, i.e. HD(Walsh)"""}
+ b(both HD&HL, i.e. HD(Walsh)""",
+    "cbα"   : "DKWM conf.band α"}
