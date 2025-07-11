@@ -1,3 +1,13 @@
+const adx = defined(release) and defined(useAdix)
+when adx: import adix/nsort             # Usually faster linear-time number sort
+else    : import std/algorithm
+proc rsort*[E](xs: var seq[E]) = ## ~ radix `sort` & `sorted`
+  when adx:
+    when E is float32: nsort xs, 0u32, xfFlt
+    else:              nsort xs, 0u64, xfFlt # !float32 => float64
+  else: sort xs
+proc rsorted*[E](xs: openArray[E]): seq[E] = result = xs; rsort result
+
 proc parzen*[F:SomeFloat, U:SomeFloat](x: openArray[F], q: U): U =
   ##[ Return Parzen Qmid Quantile of sorted openArray.  Ma, Genton &Parzen 2011:
   "Asymptotic properties of sample quantiles of discrete distributions" has more
@@ -39,12 +49,11 @@ proc walshAverages*[F: SomeFloat](x: openArray[F]): seq[F] =
   for i in 0..<n:                         # Self-inclusive pairing important
     for j in 0..i: result[k] = 0.5*(x[i] + x[j]); inc k
 
-import std/algorithm                      # Should use adix/nsort
 proc hodgesLehmann*[F:SomeFloat, U:SomeFloat](x: openArray[F], q: U): U =
   ##[ Return Generalized Hodges-Lehmann Estimator Parzen-quantile(pairwise
   averages) of sorted openArray `x`, but extreme quantiles not recommended. ]##
   var pairAvs = walshAverages x
-  sort pairAvs
+  rsort pairAvs
   parzen pairAvs, q
 
 import spfun/beta, fitl/basicLA
@@ -67,7 +76,7 @@ proc hDW*[F:SomeFloat, U:SomeFloat](x: openArray[F], q: U): U =
   ##[ Return q-Generalized Hodges-Lehmann Estimator (pairwise averages) of
   sorted openArray `x`, but with Harrell-Davis rather than Parzen quantiles. ]##
   var pAs = walshAverages x
-  sort pAs
+  rsort pAs
   var w: seq[F]; harrellDavis w, pAs.len, q
   dot pAs[0].addr, w[0].addr, pAs.len
 
