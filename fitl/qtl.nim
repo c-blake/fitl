@@ -108,7 +108,7 @@ when isMainModule:
     ## to stdout.  Eg. `|qtl 210|split -nl/21` creates 10 files each w/21 data.
     var x: seq[float]
     for line in stdin.lines: x.add parseFloat(line.strip)
-    x.sort
+    rsort x
     if ps.len == 1 and ps[0] == ps[0].int.float and ps[0] >= 2:
       for i in 1 .. int(ps[0]): echo x.quantile(rand(1.0))
     else:
