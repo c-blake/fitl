@@ -64,7 +64,7 @@ proc harrellDavis*[F:SomeFloat](w: var seq[F], n: int, q: F, err=1e-14) =
   are differences of said across successive index vals.  For the same reason,
   internal calc is in `float`, though weights may be stored as `float32`. ]##
   w.setLen n
-  let (p, q) = (float(n + 1)*q, float(n + 1)*(1 - q))
+  let (p,q) = (float(n + 1)*q, float(n + 1)*(1 - q)) # qtl `q` -> `p` complement
   let nInv = 1.0/float(n)
   var last = betaI(0.0, p, q, err)
   for i in 0..<n:
