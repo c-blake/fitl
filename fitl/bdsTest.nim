@@ -137,8 +137,8 @@ proc sampleVar(x: openArray[float]): float =
   (s2/n - (s/n)*(s/n))*n/(n - 1.0)
 
 proc BDS_N01s*(x: openArray[float]; m: int; es=0.5): seq[float] =
-  ## A simple entry point, much like the R `tseries::bdstest`.
-  ## Returns No.Sigmas for each lag tuple size 2..`m`.
+  ## A simple entry point, much like the R `tseries::bdstest`. Returns No.Sigmas
+  ## for each lag tuple size 2..`m`.  Asymptopia at n >~ 500.
   var b = initBDS[float](x.len)         # Raw k&c statistics
   let (k, c) = b.kc(x, m, m - 1, es*sqrt(x.sampleVar))
   if trace: (echo(&"k = ",k); for i in 1..m: echo &"c({i}) {c[i]}")
@@ -148,7 +148,7 @@ proc BDS_N01s*(x: openArray[float]; m: int; es=0.5): seq[float] =
 
 when isMainModule:
   proc test(x: seq[float]; m=3; es=0.5; trace=false) =
-    ## BDS Test command (like R tseries::bdstest).
+    ## BDS Test command (like R tseries::bdstest).  Asymptopia at n >~ 500.
     if x.len < m + 1: Value !! "\e[1mNOT ENOUGH DATA\e[m"
     bdsTest.trace = trace; for e in BDS_N01s(x, m, es)[2..^1]: echo &"{e:.2f}"
   dispatch test, cmdName="bdsTest"      # 1.1 2.05 3.03 4.02 5.01 6.0 7.1 8.05
