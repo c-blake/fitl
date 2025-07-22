@@ -9,6 +9,8 @@ template mkItr(itr, cmp) =
     while cmp(cast[uint](i), cast[uint](b)): yield i; i = i +! 1
 mkItr `..<`, `<`; mkItr `..`, `<=`
 
+# Detailed explanation in LeBaron 1997: A Fast Algorithm for the BDS Statistic.
+# Kanzler 1999 has a (supposedly) faster algo in radically slower Matlab PLang.
 var   trace   = false
 const NBIT    = 15 # Usable bits/word. 15 keeps lookup table small in count algo
 const ALLBITS = 0xffff  #Q: Why is this not 0x7fff?
