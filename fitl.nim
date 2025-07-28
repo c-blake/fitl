@@ -107,8 +107,14 @@ proc fmtPar[F](leading: string; bs, v, bT: seq[F]): string =
       result.add formatFloat(bb.quantile(0.95),precision=digs);result.add "\n"
   result.setLen result.len - 1
 
+proc fmtGf(nm: string; sP: (F, F); sDig, pDig: int): string =
+  result.add nm; result.add "(st,pr): "
+  result.add formatFloat(sP[0], precision=sDig); result.add "  "
+  result.add formatFloat(sP[1], precision=pDig)
+  if sP[1] < 0.01: result.add '*'             # Q: take thresh as a param?
+
 proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
-           resids="", acf=0,Corr=rank,altH=form, boot=0,mode=bMoving,Block=1,
+           resid="", acf=0, Corr=rank, altH=form, boot=0, mode=bMoving, Block=1,
            gof: set[Gof]={}, cov: set[Cov]={}, log="", trim=0f32, its=0) =
   ## Linear least squares parameter estimator for ASCII numbers in `file`.
   ## Default output is an awk/gnuplot-like formula w/best fit coefs to make ys
@@ -123,8 +129,8 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
   ## & intercept col.  A colNo prefix of z => Z)SCORE it (mean0,var1); c => only
   ## C)ENTER it (mean0); m =>(x-min)/(max-min) {->[0,1]}.
   if cols.len < 2: raise newException(HelpError,"Too few columns; Full ${HELP}")
-  let resF = if resids.len != 0: open(resids, fmWrite)  else: nil
-  let logF = if log.len    != 0: open(log   , fmAppend) else: nil
+  let resF = if resid.len != 0: open(resid, fmWrite)  else: nil
+  let logF = if log.len   != 0: open(log  , fmAppend) else: nil
   if file == "-": iNm = "stdin"; iFl = stdin
   else: iNm = file; iFl = open(file)
   let sep = initSep(delim)
@@ -154,11 +160,6 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
   var mV: (F, F)
   if ({gofD,gofW2,gofA2,gofV,gofU2}*gof).len>0: # *some* EDF-based residual test
     mV = r.mvars; r.u01ize mV                   # mean-vars => PITz just once
-  proc fmtGf(nm: string; sP: (F, F); sDig, pDig: int): string =
-    result.add nm; result.add "(st,pr): "
-    result.add formatFloat(sP[0], precision=sDig); result.add "  "
-    result.add formatFloat(sP[1], precision=pDig)
-    if sP[1] < 0.01: result.add '*'             # Q: take thresh as a param?
   if gofD  in gof: echo fmtGf("KSgaussRes" , r.gofTest(mV, gfD ), 4, 3)
   if gofW2 in gof: echo fmtGf("CvMgaussRes", r.gofTest(mV, gfW2), 4, 3)
   if gofA2 in gof: echo fmtGf("ADgaussRes" , r.gofTest(mV, gfA2), 4, 3)
@@ -176,34 +177,34 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
       linFit(Xp,n,M, b,u,w,v, r,h, o,s,xfm, thr,xv,logF)      # get best fit b
       bK.add b                                                # save b
     bT.setLen bK.len; bT.xpose(bK, boot, m)
-    covMat(v, bT, boot, m)                     # Replace `v` w/boostrapped cov
+    covMat(v, bT, boot, m)                      # Replace `v` w/boostrapped cov
     if covBoot in cov: echo fmtCov("bootstrap",v,m,covNorm in cov,covLab in cov)
   if gofPar in gof: echo &"Param Significance Breakdown:\n", fmtPar("  ",b,v,bT)
   (if resF != nil: resF.close); (if logF != nil: logF.close)
   if iFl != stdin: iFl.close # stdin must have seen EOF; So close not so wrong.
 
 when isMainModule: include cligen/mergeCfgEnv; dispatch fitl, help={
-  "cols"  : "1-origin-yCol xCol.. 0=>all 1s; ?[cs]=>Centr/Std",
-  "file"  : "input file; \"-\" => stdin",
-  "delim" : "`initSep` input delim; w=repeated whitespace",
-  "wtCol" : "1-origin sigma aka inverse weight column",
-  "sv"    : "regularize: >0 SVclip <0 -manualRidge ==0 CV",
-  "xv"    : "auto-ridge cross-validation score: GCV LOO",
-  "resids": "log residuals to this pathname",
-  "acf"   : "emit resid serial AutoCorrFunc up to this lag",
-  "Corr"  : "correlation coefficient to use: linear rank",
-  "altH"  : "alt hyp for CC pVal: - + twoSide form(ula)",
-  "boot"  : "num resamples for Cov(b); 0=>estimated Cov(b)",
-  "mode"  : "re-sample block mode: moving|circular",
-  "Block" : "re-sample block size, e.g. 1 for IID",
-  "gof" : """emit goodness of fit diagnostics:
+  "cols" : "1-origin-yCol xCol.. 0=>all 1s; ?[cs]=>Centr/Std",
+  "file" : "input file; \"-\" => stdin",
+  "delim": "`initSep` input delim; w=repeated whitespace",
+  "wtCol": "1-origin sigma aka inverse weight column",
+  "sv"   : "regularize: >0 SVclip <0 -manualRidge ==0 CV",
+  "xv"   : "auto-ridge cross-validation score: GCV LOO",
+  "resid": "log residuals to this pathname",
+  "acf"  : "emit resid serial AutoCorrFunc up to this lag",
+  "Corr" : "correlation coefficient to use: linear rank",
+  "altH" : "alt hyp for CC pVal: - + twoSide form(ula)",
+  "boot" : "num resamples for Cov(b); 0=>estimated Cov(b)",
+  "mode" : "re-sample block mode: moving|circular",
+  "Block": "re-sample block size, e.g. 1 for IID",
+  "gof" :"""emit goodness of fit diagnostics:
   r2: R^2; xsq: Chi-Square{aka SSR},df,pValue
   param: parameter significance breakdown
   GoF tests residuals are Gaussian:
     kolmogorovSmirnovD cramerVonMisesW2
     andersonDarlingA2 vKuiper watsonU2""",
-  "cov"   : "emit Cov(b) with flags: est norm label boot",
-  "log"   : "path to log (trimming, model selection..) to",
-  "trim": """trim pnts>="Nqtl(x/(2n)) sdevs" from reg surf
+  "cov"  : "emit Cov(b) with flags: est norm label boot",
+  "log"  : "path to log (trimming, model selection..) to",
+  "trim":"""trim pnts>="Nqtl(x/(2n)) sdevs" from reg surf
  [x=num pts expected if resids REALLY Normal]""",
-  "its"   : "max trimming itrs; < 0 => until fixed point."}, short={"altH": 'A'}
+  "its"  : "max trimming itrs; < 0 => until fixed point."}, short={"altH": 'A'}
