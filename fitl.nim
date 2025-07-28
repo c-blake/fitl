@@ -1,6 +1,6 @@
-import std/[strformat, math, random, strutils, algorithm],
+import std/[strformat, math, strutils, algorithm],
        cligen, cligen/[osUt, mslice, strUt],
-       fitl/[basicLA, covar, linfit, gof, qtl]
+       fitl/[basicLA, covar, linfit, gof, qtl, boots]
 when not declared(File): import std/[syncio, formatfloat]
 type
   Gof* = enum gofR2="r2", gofXsq="xsq", gofPar="param", gofV="vKuiper",
@@ -108,7 +108,7 @@ proc fmtPar[F](leading: string; bs, v, bT: seq[F]): string =
   result.setLen result.len - 1
 
 proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
-           resids="", acf=0, Corr=rank, altH=form, boot=0,
+           resids="", acf=0,Corr=rank,altH=form, boot=0,mode=bMoving,Block=1,
            gof: set[Gof]={}, cov: set[Cov]={}, log="", trim=0f32, its=0) =
   ## Linear least squares parameter estimator for ASCII numbers in `file`.
   ## Default output is an awk/gnuplot-like formula w/best fit coefs to make ys
@@ -164,15 +164,14 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
   if gofA2 in gof: echo fmtGf("ADgaussRes" , r.gofTest(mV, gfA2), 4, 3)
   if gofV  in gof: echo fmtGf("KuiGaussRes", r.gofTest(mV, gfV ), 4, 3)
   if gofU2 in gof: echo fmtGf("WatGaussRes", r.gofTest(mV, gfU2), 4, 3)
-  template slot: untyped = int(F(n)*rand(F(1))) # rand(n-1) unbiased but slow
   var bT: seq[F]                                # Collect `b` for raw `Cov(b)`
   if boot > 0:                                  # Bootstrapped cov(parameters)
-    randomize()                                 # Fit synthetic new data sets..
-    var Xp = newSeq[F](n*M)                     #..of the *same size*.
-    var bK: seq[F]; var b = newSeq[F](m)
+    let N  = closestMultiple(n, Block)          # Fit synthetic new data sets..
+    var Xp = newSeq[F](N*M)                     #..of *nearest possible* size,..
+    var bK: seq[F]; var b = newSeq[F](m)        #..*given* Block boot size.
     r.setLen 0; h.setLen 0; let nn = xfm.needNormalize
-    for k in 1..boot:                           # Gen data,reset,get&save coefs
-      for i in 0..<n: colCpy Xp[i].addr, X[slot()].addr, n, n, M, F.sizeof
+    template put(i, j) = colCpy Xp[i].addr, X[j].addr, N, n, M, F.sizeof
+    forBoot(n, boot, mode, Block, put):         # Gen data,reset,fit,save coefs
       v.zero; thr=sv; if nn: o.zero; s.set 1.0                # reset
       linFit(Xp,n,M, b,u,w,v, r,h, o,s,xfm, thr,xv,logF)      # get best fit b
       bK.add b                                                # save b
@@ -195,6 +194,8 @@ when isMainModule: include cligen/mergeCfgEnv; dispatch fitl, help={
   "Corr"  : "correlation coefficient to use: linear rank",
   "altH"  : "alt hyp for CC pVal: - + twoSide form(ula)",
   "boot"  : "num resamples for Cov(b); 0=>estimated Cov(b)",
+  "mode"  : "re-sample block mode: moving|circular",
+  "Block" : "re-sample block size, e.g. 1 for IID",
   "gof" : """emit goodness of fit diagnostics:
   r2: R^2; xsq: Chi-Square{aka SSR},df,pValue
   param: parameter significance breakdown
