@@ -15,31 +15,31 @@ proc parzen*[F:SomeFloat, U:SomeFloat](x: openArray[F], q: U): U =
   & also the right generalization of ancient "mid-ranking ties" ideas in rank
   correlation calculations (or even Wilcoxon's original 1945 paper).  Qmid is
   sadly not as widely used|even known as it should be. ]##
-  let n = x.len; let N = float(n)
-  if n < 1: return 0.0
-  let qN = float(q) * N
-  if qN <= 0.5: return x[0]
-  if qN >= N - 0.5: return x[n - 1]
-  var iL, jL, iH, jH: int
-  var xL, xH, cH, cL: float
-  jL = int(qN); iL = jL                   #XXX Could replace scans with exponen.
+  let n = x.len; let N = n.float
+  if n < 1: return 0.0                    # NO DATA ALL
+  let qN = q.float*N                      # Should be near the answer
+  if qN <= 0.5: return x[0]               # Special case for lower tail
+  if qN >= N - 0.5: return x[n - 1]       # Special case for upper tail
+  var iL, jL, iH, jH: int                 # The rank edges below & above `q`
+  var xL, xH, cL, cH: float               # Corresponding x[]'s & mid-ranks
+  jL = qN.int; iL = jL                    #XXX Could replace scans with exponen.
   xL = x[iL]                              #  ..expanding search for *many* dups.
-  while iL > 0 and x[iL-1] == xL: dec(iL)
-  while jL < n and x[jL] == xL: inc(jL)
-  cL = 0.5 * float(iL + jL)
-  if cL <= qN:                            #Scan higher
-    iH = jL; jH = iH
-    xH = if jH < n: x[jH] else: xL
-    while jH < n and x[jH] == xH: inc(jH)
-    cH = 0.5 * float(iH + jH)
-  else:                                   #Scan lower
-    cH = cL; iH = iL; jH = jL; xH = xL    # *H <- *L
-    jL = iH; iL = jL
-    xL = if iL > 0: x[iL - 1] else: xH
-    while iL > 0 and x[iL - 1] == xL: dec(iL)
-    cL = 0.5 * float(iL + jL)
-  let r = (qN - cL) / (cH - cL)
-  return U((1.0 - r) * xL  +  r * xH)
+  while iL > 0 and x[iL-1] == xL: dec iL  # Make iL index of first x[]==xL
+  while jL < n and x[jL] == xL: inc jL    # Make jL index of last x[]==xL|n
+  cL = 0.5*float(iL + jL)
+  if cL <= qN:                            # Scan higher
+    iH = jL; jH = iH                      # NOTE else: x[LH] COULD early return
+    xH = if jH < n: x[jH] else: xL        # Axes EDF-oriented   ----/-
+    while jH < n and x[jH] == xH: inc jH  # ^                 jH|  /
+    cH = 0.5*float(iH + jH)               # |<- ixes go up      cH/
+  else: # flip low -> high; scan lower    # |                  /|
+    cH = cL; iH = iL; jH = jL; xH = xL    # |                 / |
+    jL = iH; iL = jL                      # |             ---/--|
+    xL = if iL > 0: x[iL - 1] else: xH    # |qN ~~~~~~~~~~|~/ iH
+    while iL>0 and x[iL-1] == xL: dec iL  # |    jL      cL/!   xH
+    cL = 0.5*float(iL + jL)               # |            /| !
+  let r = (qN - cL)/(cH - cL)             # |    iL ----/-| ^<- answer
+  return U((1.0 - r)*xL + r*xH)           # |             xL  -----> x goes up
 
 proc walshAverages*[F: SomeFloat](x: openArray[F]): seq[F] =
   ##[ Walsh 1950: Note on a theorem due to Hoeffding; Ann.Math.Stat. 21(1) first
