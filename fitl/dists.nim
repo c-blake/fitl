@@ -224,7 +224,8 @@ proc match*(ds: openArray[(string, CDist)], pfx: string): int =
   else: raise newException(IOError, ("No prefix match for \"$1\"" % [pfx]))
 
 when isMainModule:      # A trivial command line driver mostly for testing.
-  import cligen, std/formatFloat; when defined(release): randomize()
+  when not declared addFloat: import std/formatFloat
+  import cligen; when defined(release): randomize()
   template C(a,b,th):untyped = a.abs>th and abs(a-b)>th and abs(a/b-1)>sqrt(th)
   type Plot = enum pNone="none", pPDF="pdf", pCDF="cdf", pQtl="qtl"
   proc dists(distro="U01", nSamp=0, x=Inf, plot=pNone, mode=false, v=false) =
