@@ -35,6 +35,10 @@ proc dot*[F](x, y: ptr F; n: int): F {.inline.} =
   let y = cast[ptr UncheckedArray[F]](y)
   for i in 0 ..< n: result += x[i] * y[i]
 
+proc dot*[F](x,y: openArray[F]): F {.inline.} =
+  ## Dot product with accumulator in same arithmetic width as params.
+  if x.len == y.len: dot x[0].addr, y[0].addr, x.len else: F(0) # NaN?
+
 proc dots*[F](x, y: ptr F; x0, y0: F; n: int): F {.inline.} =
   ## Dot (x-x0).(y-y0) with accumulator in same arithmetic width as params.
   let x = cast[ptr UncheckedArray[F]](x)
