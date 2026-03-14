@@ -96,7 +96,7 @@ proc fmtPar[F](leading: string; bs, v, bT: seq[F]): string =
   for j, b in bs:
     let sig = sqrt(v[bs.len*j + j])
     result.add &"{leading}{fmtUncertainMerged(b,sig)}\t{b/sig:.3g}\t"
-    let digs = max(int(log(b/sig, 10.0) + 2.5), 2)
+    let digs = range[-1..32](max(int(log(b/sig, 10.0) + 2.5), 2))
     if bT.len == 0:
       result.add formatFloat(b - 1.64485*sig, precision=digs); result.add " .. "
       result.add formatFloat(b + 1.64485*sig, precision=digs); result.add "\n"
@@ -109,8 +109,8 @@ proc fmtPar[F](leading: string; bs, v, bT: seq[F]): string =
 
 proc fmtGf(nm: string; sP: (F, F); sDig, pDig: int): string =
   result.add nm; result.add "(st,pr): "
-  result.add formatFloat(sP[0], precision=sDig); result.add "  "
-  result.add formatFloat(sP[1], precision=pDig)
+  result.add formatFloat(sP[0], precision=range[-1..32](sDig)); result.add "  "
+  result.add formatFloat(sP[1], precision=range[-1..32](pDig))
   if sP[1] < 0.01: result.add '*'             # Q: take thresh as a param?
 
 proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
