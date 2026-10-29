@@ -83,11 +83,12 @@ proc fmtBasis[F](ch: char; ix: int; o,s: F; sep: string): string =
   result.add sep
 
 proc fmtModel*[F](cols: seq[string]; ixX: seq[int]; M: int;
-                  b, v, o, s: seq[F]): string =
+                  b, v, o, s: seq[F]; error: bool): string =
   result.add fmtBasis(cols[0][0], ixX[0], o[0], s[0], "= ")
   for j in 1..<M:                       # Emit model: Y= & coeffs*Xj
     let sep = if j==M-1: "\n" else: " + "
-    let bstr = fmtUncertainVal(b[j-1], sqrt(v[j-1 + (j-1)*(M-1)]), sigDigs=3)
+    let (p, e) = (b[j-1], sqrt(v[j-1 + (j-1)*(M-1)])) # param, std.error
+    let bstr = if error: "(" & p.fmtUncertain(e, e0= -2..5) & ")" else: p.fmtUncertainVal(e)
     if ixX[j]==0: result.add bstr & sep # No *1. 4intercept
     else: result.add bstr & " *" & fmtBasis(cols[j][0], ixX[j], o[j], s[j], sep)
 
@@ -115,7 +116,7 @@ proc fmtGf(nm: string; sP: (F, F); sDig, pDig: int): string =
 
 proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
            resid="", acf=0, Corr=rank, altH=form, boot=0, mode=bMoving, Block=1,
-           gof: set[Gof]={}, cov: set[Cov]={}, log="", trim=0f32, its=0) =
+           gof:set[Gof]={}, cov:set[Cov]={},error=false,log="",trim=0f32,its=0)=
   ## Linear least squares parameter estimator for ASCII numbers in `file`.
   ## Default output is an awk/gnuplot-like formula w/best fit coefs to make ys
   ## from xs.  Options control extra output.  The input format is just:
@@ -149,7 +150,7 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
   var h: seq[F]                         #TODO Hat-matrix/influence functions
   var thr = F(sv)
   let (ssR,df,ssY) = linFit(X,n,M, b,u,w,v, r,h, o,s, trim,its,xfm, thr,xv,logF)
-  echo fmtModel(cols, ixX, M, b, v, o, s)       # emit the model
+  stdout.write fmtModel(cols, ixX, M, b, v, o, s, error) # emit the model
   if resF != nil: (for i in 0..<n: resF.write &"{r[i]:.11g}\n")
   for lag in 1..acf:                            # Maybe emit resid AutoCorrFunc
     let (ac, pLo, pHi) = corrAuto(r, lag, boot, Corr, altH)
@@ -204,6 +205,7 @@ when isMainModule: include cligen/mergeCfgEnv; dispatch fitl, help={
     kolmogorovSmirnovD cramerVonMisesW2
     andersonDarlingA2 vKuiper watsonU2""",
   "cov"  : "emit Cov(b) with flags: est norm label boot",
+  "error": "put estCov(b) std.error into model formula",
   "log"  : "path to log (trimming, model selection..) to",
   "trim":"""trim pnts>="Nqtl(x/(2n)) sdevs" from reg surf
  [x=num pts expected if resids REALLY Normal]""",
