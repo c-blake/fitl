@@ -1,5 +1,5 @@
 import std/[strformat, math, strutils, algorithm],
-       cligen, cligen/[osUt, mslice, strUt],
+       cligen, cligen/[osUt, mslice, strUt, sysUt],
        fitl/[basicLA, covar, linfit, gof, qtl, boots]
 when not declared(File): import std/[syncio, formatfloat]
 type
@@ -128,7 +128,7 @@ proc fitl*(cols: seq[string], file="-", delim="w", wtCol=0, sv=1e-8, xv=xvLOO,
   ## 1 for all data points -- useful as both flat reciprocal weight (aka sigma)
   ## & intercept col.  A colNo prefix of z => Z)SCORE it (mean0,var1); c => only
   ## C)ENTER it (mean0); m =>(x-min)/(max-min) {->[0,1]}.
-  if cols.len < 2: raise newException(HelpError,"Too few columns; Full ${HELP}")
+  if cols.len < 2: Help !! "Too few columns; Full ${HELP}"
   let resF = if resid.len != 0: open(resid, fmWrite)  else: nil
   let logF = if log.len   != 0: open(log  , fmAppend) else: nil
   if file == "-": iNm = "stdin"; iFl = stdin
